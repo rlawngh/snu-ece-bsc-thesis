@@ -3,17 +3,20 @@
 % Add your packages here, e.g.,
 % \usepackage{tikz}
 \usepackage{siunitx}
+\usepackage{physics, indentfirst, amsmath, amssymb}
 
 % For lorem ipsum; remove these lines when writing your thesis
 \usepackage{lipsum}
 \usepackage{jiwonlipsum}
+\DeclareMathOperator*{\argmax}{arg\,max}
+
 
 % hyperref *must* be the last package to be loaded!
 \usepackage[pdfusetitle]{hyperref}
 
 \addbibresource{bib.bib}
 
-\title{SNU ECE BSc Thesis Template}
+\title{SNU ECE BSc Thesis}
 \author{김주호}
 \advisor{최완}
 \date{2025년 12월}
@@ -28,7 +31,7 @@
 
 \pagenumbering{roman}
 \begin{abstract}
-  \lipsum[1]
+    asdf
 \end{abstract}
 
 \tableofcontents
@@ -37,21 +40,14 @@
 
 \chapter{Introduction}\label{chap:introduction}
 \pagenumbering{arabic}
-This template is structured as follows.
-Section~\ref{sec:figure} of chapter~\ref{chap:body} shows an example of a figure.
-Section~\ref{sec:table} of chapter~\ref{chap:body} shows an example of a table.
-Chapter~\ref{chap:conclusion} concludes this template.
-감격스럽다
-% \lipsum[2-3]
 
-
-\chapter{Body}\label{chap:body}
+% chapter 2 body
+\chapter{Background and Prior Research}\label{chap:background}
 Entropy of information is the expected value of information contained in each message, and is given by equation~\eqref{eq:entropy}~\cite{6773024}.
 \begin{equation}\label{eq:entropy}
   H(X) = -\sum_{i=1}^n {\mathrm{P}(x_i) \log_b \mathrm{P}(x_i)}
 \end{equation}
 
-\lipsum[4-6]
 
 
 \section{Figure}\label{sec:figure}
@@ -73,32 +69,297 @@ Figure~\ref{fig:snu} is the logo of Seoul National University and figure~\ref{fi
   \caption[Figure example (ToC)]{An example of a figure.}\label{fig:example}
 \end{figure}
 
-\lipsum[7-8]
+
+\section{The Multi-Path Channel Model and Inter-Symbol Interference (ISI)}\label{sec:isi}
+In wireless communications, the transmitted signal rarely travels along a single, direct line-of-sight path. Instead, the signal reflects and scatters off surfaces such as buildings, walls, and other objects, creating multiple copies of the signal that arrive at the receiver at different times. This phenomenon is known as multi-path propagation. \\
+To accurately represent this, we use a multi-path channel model. The channel is modeled as having $L$ distinct paths. Each $l$-th path is characterized by its complex gain $\alpha_l$, physical propagation delay $\tau_l$, and an angle of departure (AoD) $\theta_{li}$. Furthermore, each path $l$ may itself consist of $\mu_l$ non-resolvable sub-paths. The total channel vector for the $l$-th path, $\vb{h}_l$, is therefore a composite of all its sub-paths~\cite{10970425}.
+\begin{equation}\label{eq:channel_vector}
+    \vb{h}_l=\alpha_l \sum_{i=1}^{\mu_l} v_{li}\vb{a}_t(\theta_{li})
+\end{equation}
+Here, $v_{li}$ is the complex coefficient of the $i$-th sub-path within the $l$-th path, and $\vb{a}_t(\theta_{li})$ is the transmit array response vector corresponding to the AoD $\theta_{li}$. For a Uniform Linear Array (ULA) with $M_t$ antennas, the array response vector is defined in \eqref{eq:steering_vector}. $d$ is the antenna spacing and $\lambda$ is the wavelength. The array response vector captures the phase shifts across the antenna array due to the angle of departure,
+resulting in a channel vector $\vb{h}_l$ for that path.\\
+\begin{equation}\label{eq:steering_vector}
+    \vb{a}_t(\theta_{li}) = \left[1, e^{-j2\pi \frac{d}{\lambda} \sin(\theta_{li})}, \cdots, e^{-j2\pi (M_t-1) \frac{d}{\lambda} \sin(\theta_{li})}\right]^T
+\end{equation}
+When a signal $\vb{x}[n]$ is transmitted using a pulse-shaping filter $p(t)$, the continuous-time channel is sampled at the receiver. This results in a discrete, tap-based channel model, $\vb{h}_{\text{DL}}^H[q]$, where $q$ is the tap index. The tap-based channel model is highly general, as it naturally accounts for fractional path delays (where $\tau_l$ is not an integer multiple of the symbol duration $T_s$). As shown in \eqref{eq:NB_channel}\cite{10970425}, the $q$-th tap of the channel is the superposition of contributions from all $L$ paths. 
+\begin{equation}\label{eq:NB_channel}
+    \vb{h}_{\text{DL}}^H[q] = \sum_{l=1}^L \vb{h}_l^H p(qT_s-\tau_l), q=0,\cdots, Q
+\end{equation}
+The total received signal $y[n]$ is the convolution of the transmitted signal $\vb{x}[n]$ with the channel taps $\vb{h}_{\text{DL}}^H[q]$, plus additive noise $\vb{z}[n]$, as shown in \eqref{eq:received_signal}\cite{10970425}.
+\begin{equation}\label{eq:received_signal}
+    y[n] = \sum_{q=0}^Q \vb{h}_{\text{DL}}^H[q] \vb{x}[n-q] + \vb{z}[n]
+\end{equation}
+\section{Delay Alignment Modulation (DAM) with Hybrid Beamforming}\label{sec:dam}
+\begin{equation}\label{eq:transmitted_signal}
+    \vb{x}[n]=\vb{F}_{\text{RF}}\sum_{l=1}^{L'} \vb{f}_{\text{BB},l}s[n-\kappa_l]
+\end{equation}
+\begin{equation}\label{eq:received_signal_dam}
+    y[n]=\sum_{q=0}^Q \sum_{l=1}^{L'} \vb{h}_{\text{DL}}^H[q] \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l} s[n-\kappa_l-q] + z[n]
+\end{equation}
+\begin{equation}\label{eq:received_signal_dam2}
+    y[n]=\left\{\sum_{l=1}^{L'} \vb{h}_{\text{DL}}^H[q_l] \vb{f}_l\right\} s[n-q_{max}] + \sum_{l=1}^{L'} \sum_{q\neq q_l}^Q \vb{h}_{\text{DL}}^H[q] \vb{f}_l s[n-q_{max}+q_l - q] + z[n]
+\end{equation}
+\begin{equation}\label{eq:g_definition}
+    \vb{g}_l^H[i]=
+    \begin{cases}
+    \vb{h}_{\mathrm{DL}}^{H}[q], & \text{if }\exists\, l \in \{1,\ldots,L'\} \text{ s.t. } q_l - q = i,\\[4pt]
+    \vb{0}, & \text{otherwise}.
+\end{cases}
+\end{equation}
+\begin{equation}\label{eq:received_signal_dam3}
+    y[n] =
+    \left(
+    \sum_{l=1}^{L'}
+        \mathbf{h}_{\mathrm{DL}}^{H}[q_l]\mathbf{f}_l
+    \right)
+    s[n - q_{\max}]
+    +
+    \sum_{\substack{i=-Q \\ i\neq 0}}^{Q}
+    \left(
+        \sum_{l=1}^{L'}
+            \mathbf{g}_l^{H}[i]\mathbf{f}_l
+    \right)
+    s[n - q_{\max} + i]
+    + z[n].
+\end{equation}
+\begin{equation}\label{eq:sinr_dam}
+    \gamma
+=
+\frac{
+\left| \sum_{l=1}^{L'} \mathbf{h}_{\mathrm{DL}}^{H}[q_l]\mathbf{f}_l \right|^{2}
+}{
+\displaystyle
+\sum_{\substack{i=-Q\\ i\neq 0}}^{Q}
+\left| \sum_{l=1}^{L'} \mathbf{g}_{l}^{H}[i]\mathbf{f}_l \right|^{2}
++ \sigma^{2}
+}
+=
+\frac{
+\bar{\mathbf{f}}^{H}\,\bar{\mathbf{h}}_{\mathrm{DL}}\bar{\mathbf{h}}_{\mathrm{DL}}^{H}\bar{\mathbf{f}}
+}{
+\bar{\mathbf{f}}^{H}
+\left(
+\displaystyle
+\sum_{\substack{i=-Q\\ i\neq 0}}^{Q}
+\bar{\mathbf{g}}[i]\bar{\mathbf{g}}^{H}[i]
++ \sigma^{2}\mathbf{I}/\lVert \bar{\mathbf{f}} \rVert^{2}
+\right)
+\bar{\mathbf{f}}
+}. 
+\end{equation}
+where $\bar{\vb{h}}_{\text{DL}} = [\mathbf{h}_{\text{DL}}^T[q_1], \ldots, \mathbf{h}_{\text{DL}}^T[q_{L'}]]^T \in \mathbb{C}^{M_t L' \times 1}$, $\bar{\vb{f}} = [\mathbf{f}_1^T, \ldots, \mathbf{f}_{L'}^T]^T \in \mathbb{C}^{M_t L' \times 1}$, and $\mathbf{\bar{g}}[i] = [\mathbf{g}_1^T[i], \ldots, \mathbf{g}_{L'}^T[i]]^T \in \mathbb{C}^{M_t L' \times 1}$. To maximize the spectral efficiency of tap-based
+\begin{equation}\label{eq:f_mmse_bar}
+    \bar{\vb{f}}^{\mathrm{MMSE}}=\sqrt{P}\frac{\mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}}}{ \left\lVert \mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}} \right\rVert}
+\end{equation}
+where $\mathbf{C} \triangleq \sum_{i=-Q, i\neq 0}^{Q} \bar{\mathbf{g}}[i]\bar{\mathbf{g}}^{H}[i] + \sigma^{2}/P \mathbf{I}$, with $\lVert \bar{\mathbf{f}} \rVert^{2} = P$.
+\section{The Spatial Wideband Effect}\label{sec:SWE}
+
+\chapter{System and Channel Model}\label{chap:model}
+\section{System Architecture}\label{sec:system}
+\section{Channel Model Formulations}\label{sec:channel}
+We introduce three channel models : NB-DAM, WB-DAM, and SA-DAM. NB-DAM is the conventional narrowband model, ignoring the spatial wideband effect. It assumes that a siganl arrives at all $M_t$ antennas at the exact same physical delay $\tau_l$. This model is from the previous paper, and is given by \eqref{eq:NB_channel}. NB-DAM is physically inaccurate for large antenna arrays and wide bandwidths, as the travel time is different for each antenna. \\
+WB-DAM is the "physically perfect" ground truth model, fully capturing the spatial wideband effect. It correctly calculates the unique, distinct delay for every single antenna in the array. The delay for the $m$-th antenna of the $l$-th path is given by \eqref{eq:antenna_delay}\cite{9351751},
+
+\begin{equation}\label{eq:antenna_delay}
+    \tau_{l,m} = \tau_{l,1} + (m-1) \frac{d \sin(\theta_{li})}{c}, m=1,\cdots,M_t
+\end{equation}
+where $c$ is the speed of light. The $q$-th tap of the WB-DAM channel is given by \eqref{eq:WB_channel}.
+
+\begin{equation}\label{eq:WB_channel}
+    \vb{h}_{\text{WB-DAM}}^H[q]=\sum_{l=1}^L \sum_{i=1}^{\mu_l}\overline{\alpha_l}\overline{v_{li}}
+		\begin{bmatrix}
+			p(qT_s-\tau_{l,1}),&
+			\cdots, &
+			e^{j \tfrac{2\pi (M_t-1)d}{\lambda}\sin(\theta_{li})}p(qT_s-\tau_{l,M_t})
+		\end{bmatrix}
+\end{equation}
+The SA-DAM model is an approximation of the WB-DAM model, quantizing the spatial delay across the array. The $M_t$ antenna array is partitioned into $K$ sub-arrays, each with $M_s = M_t/K$ antennas. Each sub-array assumes a common delay for all its antennas, specifically the delay of the first antenna in that sub-array. The delay for the $k$-th sub-array of the $l$-th path is given by \eqref{eq:subarray_delay}, and the $q$-th tap of the SA-DAM channel is given by \eqref{eq:SA-DAM_channel}.
+\begin{equation}\label{eq:subarray_delay}
+    \tau_{l,k}^{\mathrm{rep}} = \tau_{l,1} + (k-1)M_s \frac{d \sin(\theta_{li})}{c}, k=1,\cdots,K
+\end{equation}
+% \begin{equation} \label{eq:SA-DAM_channel}
+% \begin{split}
+%     \mathbf{h}_{\mathrm{SA-DAM}}^H[q] = \sum_{l=1}^L \sum_{i=1}^{\mu_l} & \overline{\alpha_l}\overline{v_{li}} \cdot
+%     \left\[ \underbrace{
+%         p(qT_s - \tau_{l,1}^{\mathrm{rep}}), \dots, e^{j2\pi(M_s-1)\frac{d}{\lambda}\sin(\theta_{li})}p(qT_s - \tau_{l,1}^{\mathrm{rep}})
+%     }_{\text{Sub-array 1 (uses delay } \tau_{l,1}^{\mathrm{rep}} \text{)}}
+%     , \dots , \\
+%     \underbrace{
+%         e^{j2\pi(M_t-M_s)\frac{d}{\lambda}\sin(\theta_{li})}p(qT_s - \tau_{l,K}^{\mathrm{rep}}), \dots, e^{j2\pi(M_t-1)\frac{d}{\lambda}\sin(\theta_{li})}p(qT_s - \tau_{l,K}^{\mathrm{rep}})
+%     }_{\text{Sub-array } K \text{ (uses delay } \tau_{l,K}^{\mathrm{rep}} \text{)}}\right\]
+% \end{split}
+% \end{equation}
+\begin{equation} \label{eq:SA-DAM_channel}
+\begin{split}
+    \mathbf{h}_{\mathrm{SA-DAM}}^H[q] = \sum_{l=1}^L \sum_{i=1}^{\mu_l} & \overline{\alpha_l}\overline{v_{li}} \cdot
+    \left[ \underbrace{
+        p(qT_s - \tau_{l,1}^{\mathrm{rep}}), \dots, e^{j2\pi(M_s-1)\frac{d}{\lambda}\sin(\theta_{li})}p(qT_s - \tau_{l,1}^{\mathrm{rep}})
+    }_{\text{Sub-array 1 (uses delay } \tau_{l,1}^{\mathrm{rep}} \text{)}}
+    , \dots , \right. \\
+    & \left. \underbrace{
+        e^{j2\pi(M_t-M_s)\frac{d}{\lambda}\sin(\theta_{li})}p(qT_s - \tau_{l,K}^{\mathrm{rep}}), \dots, e^{j2\pi(M_t-1)\frac{d}{\lambda}\sin(\theta_{li})}p(qT_s - \tau_{l,K}^{\mathrm{rep}})
+    }_{\text{Sub-array } K \text{ (uses delay } \tau_{l,K}^{\mathrm{rep}} \text{)}}\right]
+\end{split}
+\end{equation}
+
+\section{Problem Formulation}\label{sec:problem}
+The background research in Section~\ref{sec:dam} presents the optimal fully-digital beamformer, $\bar{\vb{f}}^{\mathrm{MMSE}}$ (from \eqref{eq:f_mmse_bar}), which maximizes the SINR in a tap-based DAM system. This solution, however, is purely theoretical as it assumes a dedicated Radio Frequency (RF) chain for each of the $M_t$ antenna elements. In practical mmWave and THz systems, this fully-digital architecture is prohibitively expensive and power-intensive.
+
+To address this, we employ a practical hybrid analog/digital architecture, as shown in \eqref{eq:transmitted_signal}. In this structure, the $M_t \times 1$ ideal beamformer $\vb{f}_l$ for each tap $l$ is approximated by the product of a high-dimensional analog beamforming matrix $\vb{F}_{\text{RF}} \in \mathbb{C}^{M_t \times M_{\text{RF}}}$ and a low-dimensional digital beamforming vector $\vb{f}_{\text{BB},l} \in \mathbb{C}^{M_{\text{RF}} \times 1}$, where the number of RF chains $M_{\text{RF}} \ll M_t$.
+
+Let $\vb{F}_{\text{opt}} = [\vb{f}_1, \dots, \vb{f}_{L'}] \in \mathbb{C}^{M_t \times L'}$ be the ideal, fully-digital beamforming matrix (composed of the MMSE vectors). The first challenge is to find the hybrid matrices $(\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}})$ that best approximate $\vb{F}_{\text{opt}}$. This is a matrix factorization problem:
+\begin{equation}\label{eq:matrix_factorization}
+    \min_{\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}}} \left\| \vb{F}_{\text{opt}} - \vb{F}_{\text{RF}} \vb{F}_{\text{BB}} \right\|_F^2
+\end{equation}
+This optimization is subject to two critical hardware constraints:
+\begin{enumerate}
+    \item The analog beamformer $\vb{F}_{\text{RF}}$ must satisfy the \textbf{constant-modulus constraint}, as it is implemented by analog phase shifters which can only alter the phase, not the amplitude, of the signal \cite{10970425}.
+    \item The total transmitted power is constrained, i.e., $\left\| \vb{F}_{\text{RF}} \vb{F}_{\text{BB}} \right\|_F^2 = P$.
+\end{enumerate}
+
+Here lies the central problem of this thesis. The "optimal" beamformer $\vb{F}_{\text{opt}}$ is not absolute; it is a function of the channel model $\vb{h}_{\text{DL}}[q]$ used to calculate it. As established in Section~\ref{sec:channel}, we have three distinct channel models, each with a different level of physical accuracy:
+\begin{itemize}
+    \item $\vb{h}_{\text{NB-DAM}}[q]$ (The inaccurate, narrowband model)
+    \item $\vb{h}_{\text{SA-DAM}}[q]$ (The approximate, sub-array model)
+    \item $\vb{h}_{\text{WB-DAM}}[q]$ (The "ground truth," wideband model)
+\end{itemize}
+This implies we can compute three different "ideal" beamformers:
+\begin{align}
+    \vb{F}_{\text{opt}}^{\text{NB}} &= \text{MMSE}(\vb{h}_{\text{NB-DAM}}) \\
+    \vb{F}_{\text{opt}}^{\text{SA}} &= \text{MMSE}(\vb{h}_{\text{SA-DAM}}) \\
+    \vb{F}_{\text{opt}}^{\text{WB}} &= \text{MMSE}(\vb{h}_{\text{WB-DAM}})
+\end{align}
+This leads to our primary research objective: \textbf{to quantify the performance mismatch when a practical hybrid beamformer is designed using an imperfect channel model.}
+
+Our methodology, which will be detailed in Chapter~\ref{chap:design} and~\ref{chap:results}, is as follows:
+\begin{enumerate}
+    \item \textbf{Design:} For each of the three channel models, we first compute the ideal beamformer ($\vb{F}_{\text{opt}}^{\text{NB}}$, $\vb{F}_{\text{opt}}^{\text{SA}}$, $\vb{F}_{\text{opt}}^{\text{WB}}$). We then solve the approximation problem \eqref{eq:matrix_factorization} to find a corresponding set of practical hybrid beamformers: $(\vb{F}_{\text{RF}}^{\text{NB}}, \vb{F}_{\text{BB}}^{\text{NB}})$, $(\vb{F}_{\text{RF}}^{\text{SA}}, \vb{F}_{\text{BB}}^{\text{SA}})$, and $(\vb{F}_{\text{RF}}^{\text{WB}}, \vb{F}_{\text{BB}}^{\text{WB}})$.
+    \item \textbf{Evaluation:} The ultimate goal is to maximize performance in the real world. Therefore, we evaluate all three hybrid beamformers on the single "ground truth" channel, $\vb{h}_{\text{WB-DAM}}$. For any given hybrid beamformer $(\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}})$, the evaluated SINR is:
+    \begin{equation}\label{eq:sinr_evaluation}
+        \gamma_{\text{eval}} =
+        \frac{
+        \left| \sum_{l=1}^{L'} \vb{h}_{\text{WB-DAM}}^{H}[q_l] \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l} \right|^{2}
+        }{
+        \displaystyle
+        \sum_{\substack{i=-Q\\ i\neq 0}}^{Q}
+        \left| \sum_{l=1}^{L'} \vb{g}_{\text{WB-DAM}, l}^{H}[i] \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l} \right|^{2}
+        + \sigma^{2}
+        }
+    \end{equation}
+    where $\vb{h}_{\text{WB-DAM}}^{H}[q]$ and $\vb{g}_{\text{WB-DAM}, l}^{H}[i]$ are both derived from the true wideband channel model \eqref{eq:WB_channel}.
+\end{enumerate}
+The final performance metric is the achievable rate $R = \log_2(1 + \gamma_{\text{eval}})$. This formulation allows us to directly quantify the performance loss from using the simpler, but physically inaccurate, `NB-DAM` and `SA-DAM` models for hybrid beamformer design.
+
+\chapter{Proposed Hybrid Beamforming Design}\label{chap:design}
+As formulated in Section~\ref{sec:problem}, our core task is to design a practical hybrid beamformer $(\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}})$ that approximates an ideal, fully-digital target $\vb{F}_{\text{opt}}$. This chapter details the specific two-stage methodology and algorithms used to achieve this, as implemented in our simulations.
+
+First, we define the ideal target $\vb{F}_{\text{opt}}$ by solving the fully-digital MMSE problem. Second, we describe the Orthogonal Matching Pursuit (OMP) algorithm, which is the sparse approximation technique used to solve the matrix factorization problem in \eqref{eq:matrix_factorization}. Finally, we detail the construction of the channel-aware beamforming dictionary, which is a critical component for the OMP algorithm's success.
+
+\section{Stage 1: Ideal Fully-Digital MMSE Beamformer}
+The first stage is to compute the theoretical "target" beamformer, $\vb{F}_{\text{opt}}$, which we aim to approximate. This target is the optimal fully-digital beamformer that maximizes the SINR. As shown in Section~\ref{sec:dam}, the SINR is maximized by the MMSE solution \cite{10970425}.
+
+This solution is given by \eqref{eq:f_mmse_bar}, which we restate here from Chapter 2:
+\begin{equation}
+    \bar{\vb{f}}^{\mathrm{MMSE}}=\sqrt{P}\frac{\mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}}}{ \left\lVert \mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}} \right\rVert}
+\end{equation}
+where $\mathbf{C}$ is the interference-plus-noise covariance matrix, defined as:
+\begin{equation}\label{eq:C_matrix}
+    \mathbf{C} \triangleq \sum_{i=-Q, i\neq 0}^{Q} \bar{\mathbf{g}}[i]\bar{\mathbf{g}}^{H}[i] + \frac{\sigma^{2}}{P} \mathbf{I}_{M_t L'}
+\end{equation}
+The resulting $\bar{\vb{f}}^{\mathrm{MMSE}}$ is a stacked vector of size $(M_t L' \times 1)$. To create our target matrix $\vb{F}_{\text{opt}}$, we simply reshape this vector into an $(M_t \times L')$ matrix, where each $l$-th column corresponds to the ideal beamforming vector for the $l$-th selected tap.
+
+As per our problem formulation, this entire calculation is performed independently for each of the three channel models. This yields three distinct ideal beamforming matrices, which form the targets for our hybrid approximation:
+\begin{itemize}
+    \item $\vb{F}_{\text{opt}}^{\text{NB}} = \text{Reshape}(\text{MMSE}(\vb{h}_{\text{NB-DAM}}))$
+    \item $\vb{F}_{\text{opt}}^{\text{SA}} = \text{Reshape}(\text{MMSE}(\vb{h}_{\text{SA-DAM}}))$
+    \item $\vb{F}_{\text{opt}}^{\text{WB}} = \text{Reshape}(\text{MMSE}(\vb{h}_{\text{WB-DAM}}))$
+\end{itemize}
+
+\section{Stage 2: Hybrid Approximation via Orthogonal Matching Pursuit}
+With the ideal target $\vb{F}_{\text{opt}}$ defined, the second stage is to solve the practical approximation problem from \eqref{eq:matrix_factorization}. This involves finding the analog matrix $\vb{F}_{\text{RF}}$ and digital matrix $\vb{F}_{\text{BB}}$ that minimize the approximation error, subject to the hardware constraints.
+
+This problem is non-convex due to the constant-modulus constraint on $\vb{F}_{\text{RF}}$. We solve it using a greedy sparse recovery algorithm, **Orthogonal Matching Pursuit (OMP)**, which is well-suited for this task \cite{10970425}. The OMP algorithm iteratively constructs the analog beamformer $\vb{F}_{\text{RF}}$ column by column.
 
 
-\section{Table}\label{sec:table}
-Example of a table is shown in table~\ref{tab:example}.\footnote{\lipsum[12]}
 
-\begin{table}[htp]
-  \centering
-  \caption[Table example (ToC)]{An example of a table.}\label{tab:example}
-  \begin{tblr}{cc}
-    \toprule
-    Constant & Value \\\midrule
-    $c$ & \SI{299792458}{\meter\per\second} \\
-    $h$ & \SI{6.62607015e-34}{\joule\per\hertz} \\\bottomrule
-  \end{tblr}
-\end{table}
+The process, as implemented in our simulation's \texttt{orthogonal\_matching\_pursuit\_improved} function, is as follows:
 
-\lipsum[9-10]
+\begin{enumerate}
+    \item \textbf{Initialization:} Start with an empty analog beamformer $\vb{F}_{\text{RF}}^{(0)}$ (a matrix with 0 columns) and set the residual matrix $\vb{F}_{\text{res}} = \vb{F}_{\text{opt}}$. Set the iteration counter $k=1$.
 
+    \item \textbf{Atom Selection:} In the $k$-th iteration, find the "best" analog beam vector (or "atom") $\vb{a}_k$ from a predefined beamforming dictionary $\mathcal{A}_t$ (see Section~\ref{sec:dictionary}). The best atom is the one that is most correlated with the current residual, i.e., it maximizes $\left\| \vb{a}^H \vb{F}_{\text{res}} \right\|_F^2$.
+    \begin{equation}
+        \vb{a}_k = \argmax_{\vb{a} \in \mathcal{A}_t} \left\| \vb{a}^H \vb{F}_{\text{res}} \right\|_F^2
+    \end{equation}
 
+    \item \textbf{Update Analog Beamformer:} Add the selected atom to the analog beamformer: $\vb{F}_{\text{RF}}^{(k)} = [\vb{F}_{\text{RF}}^{(k-1)}, \vb{a}_k]$.
+
+    \item \textbf{Update Digital Beamformer:} Re-calculate the optimal digital beamformer $\vb{F}_{\text{BB}}^{(k)}$ by finding the regularized least-squares solution that projects $\vb{F}_{\text{opt}}$ onto the subspace now spanned by $\vb{F}_{\text{RF}}^{(k)}$:
+    \begin{equation}
+        \vb{F}_{\text{BB}}^{(k)} = \left( (\vb{F}_{\text{RF}}^{(k)})^H \vb{F}_{\text{RF}}^{(k)} + \gamma \mathbf{I} \right)^{-1} (\vb{F}_{\text{RF}}^{(k)})^H \vb{F}_{\text{opt}}
+    \end{equation}
+    where $\gamma$ is a small regularization factor for numerical stability.
+
+    \item \textbf{Update Residual:} Update the residual matrix to represent the remaining, un-approximated portion of $\vb{F}_{\text{opt}}$:
+    \begin{equation}
+        \vb{F}_{\text{res}} = \vb{F}_{\text{opt}} - \vb{F}_{\text{RF}}^{(k)} \vb{F}_{\text{BB}}^{(k)}
+    \end{equation}
+
+    \item \textbf{Iteration:} Increment $k$ and repeat from Step 2 until $k = M_{\text{RF}}$ (i.e., we have selected one analog beam for each RF chain).
+
+    \item \textbf{Finalization:} The final hybrid matrices are $\vb{F}_{\text{RF}} = \vb{F}_{\text{RF}}^{(M_{\text{RF}})}$ and $\vb{F}_{\text{BB}} = \vb{F}_{\text{BB}}^{(M_{\text{RF}})}$. The digital beamformer $\vb{F}_{\text{BB}}$ is then scaled to ensure the total power constraint $\left\| \vb{F}_{\text{RF}} \vb{F}_{\text{BB}} \right\|_F^2 = P$ is met.
+\end{enumerate}
+
+\section{Beamforming Dictionary Construction}\label{sec:dictionary}
+The performance of the OMP algorithm is critically dependent on the quality of the beamforming dictionary $\mathcal{A}_t$. This dictionary is a finite set of $M_t \times 1$ vectors, representing all possible analog beams that the hardware can form.
+
+A simple approach would be to populate $\mathcal{A}_t$ with array response vectors pointing in many different, finely-quantized directions. However, this creates a very large dictionary, making the search in Step 2 of the OMP algorithm computationally expensive.
+
+Given that mmWave and THz channels are spatially sparse, with power concentrated along the $L$ propagation paths, we adopt a more intelligent, \textbf{channel-aware dictionary} \cite{10970425}. As implemented in our \texttt{create\_omp\_dictionary} function, we construct the dictionary $\mathcal{A}_t$ using the *actual Angles of Departure (AoDs)* of the channel's sub-paths.
+
+The dictionary is formed by taking the set of all sub-path AoDs, $\{\theta_{li}\}$, from the physical channel model and creating an array response vector for each one:
+\begin{equation}
+    \mathcal{A}_t = \left\{ \vb{a}_t(\theta_{li}) \;\middle|\; l \in [1, L], i \in [1, \mu_l] \right\}
+\end{equation}
+This approach creates a compact and highly-relevant dictionary, ensuring that the OMP algorithm selects analog beams that are already pointed in directions where significant channel energy exists. In our simulation, if the number of paths is very small, we augment this dictionary with a standard quantized grid of angles to ensure full spatial coverage.
+
+\section{Complete Design and Evaluation Workflow}\label{sec:workflow}
+Our simulation script (\texttt{run\_all\_simulations.m}) combines these stages into a complete workflow to test our central hypothesis. This workflow is executed for every single Monte Carlo realization to average out the effects of random channel generation.
+
+The process is as follows:
+\begin{enumerate}
+    \item \textbf{Generate Physical Channel:} A single set of physical parameters (path gains $\alpha_l$, physical delays $\tau_l$, and AoDs $\theta_{li}$) is randomly generated.
+
+    \item \textbf{Instantiate All Models:} Using these physical parameters, all three channel models are computed and instantiated:
+    \begin{itemize}
+        \item $\vb{h}_{\text{NB-DAM}}[q]$ (from \eqref{eq:NB_channel})
+        \item $\vb{h}_{\text{SA-DAM}}[q]$ (from \eqref{eq:SA-DAM_channel})
+        \item $\vb{h}_{\text{WB-DAM}}[q]$ (from \eqref{eq:WB_channel})
+    \end{itemize}
+
+    \item \textbf{Create Dictionary:} A single channel-aware dictionary $\mathcal{A}_t$ is created from the physical AoDs $\{\theta_{li}\}$.
+
+    \item \textbf{Design Beamformers (in parallel):}
+    \begin{enumerate}
+        \item \textbf{(NB Design)} $\vb{F}_{\text{opt}}^{\text{NB}}$ is computed from $\vb{h}_{\text{NB-DAM}}$. OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{NB}}, \vb{F}_{\text{BB}}^{\text{NB}})$.
+        \item \textbf{(SA Design)} $\vb{F}_{\text{opt}}^{\text{SA}}$ is computed from $\vb{h}_{\text{SA-DAM}}$. OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{SA}}, \vb{F}_{\text{BB}}^{\text{SA}})$.
+        \item \textbf{(WB Design)} $\vb{F}_{\text{opt}}^{\text{WB}}$ is computed from $\vb{h}_{\text{WB-DAM}}$. OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{WB}}, \vb{F}_{\text{BB}}^{\text{WB}})$.
+    \end{enumerate}
+
+    \item \textbf{Evaluate on Ground Truth:} All three resulting hybrid beamformers are evaluated on the one, true channel model, $\vb{h}_{\text{WB-DAM}}$, by calculating their resulting SINR $\gamma_{\text{eval}}$ using \eqref{eq:sinr_evaluation}.
+
+    \item \textbf{Calculate Rate:} The final achievable rate $R = \log_2(1 + \gamma_{\text{eval}})$ is stored for all three designs.
+\end{enumerate}
+This workflow ensures a fair and direct comparison. It isolates the performance difference caused purely by the \emph{choice of channel model} used during the design stage. The results of this workflow are presented in the following chapter.
+\chapter{Simulation Results and Analysis}\label{chap:results}
+\section{Simulation Environment and Parameters}\label{sec:environment}
+\section{Result 1: Achievable Rate vs. SNR}\label{sec:result1}
+\section{Result 2: Achievable Rate vs. Number of Antennas}\label{sec:result2}
+\section{Result 3: Achievable Rate vs. Bandwidth}\label{sec:result3}
 \chapter{Conclusion}\label{chap:conclusion}
-\lipsum[11]
 
 \printbibliography
 
 \begin{abstract}[ko]
-  \jiwon[1]
 \end{abstract}
 \end{document}
