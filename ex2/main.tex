@@ -3,7 +3,8 @@
 % Add your packages here, e.g.,
 % \usepackage{tikz}
 \usepackage{siunitx}
-\usepackage{physics, indentfirst, amsmath, amssymb}
+\usepackage{indentfirst, amsmath, amssymb}
+\usepackage{physics}
 
 % For lorem ipsum; remove these lines when writing your thesis
 \usepackage{lipsum}
@@ -43,38 +44,13 @@
 
 % chapter 2 body
 \chapter{Background and Prior Research}\label{chap:background}
-Entropy of information is the expected value of information contained in each message, and is given by equation~\eqref{eq:entropy}~\cite{6773024}.
-\begin{equation}\label{eq:entropy}
-  H(X) = -\sum_{i=1}^n {\mathrm{P}(x_i) \log_b \mathrm{P}(x_i)}
-\end{equation}
-
-
-
-\section{Figure}\label{sec:figure}
-Example of a figure is shown in figure~\ref{fig:example}.
-Figure~\ref{fig:snu} is the logo of Seoul National University and figure~\ref{fig:eng} is the logo of College of Engineering.
-
-\begin{figure}[htp]
-  \centering
-  \begin{subfigure}[b]{0.5\textwidth}
-    \centering
-    \includegraphics[width=0.5\textwidth]{logo1.pdf}
-    \caption{The logo of Seoul National University}\label{fig:snu}
-  \end{subfigure}%
-  \begin{subfigure}[b]{0.5\textwidth}
-    \centering
-    \includegraphics[width=0.9\textwidth]{logo2.pdf}
-    \caption{The logo of College of Engineering}\label{fig:eng}
-  \end{subfigure}
-  \caption[Figure example (ToC)]{An example of a figure.}\label{fig:example}
-\end{figure}
 
 
 \section{The Multi-Path Channel Model and Inter-Symbol Interference (ISI)}\label{sec:isi}
 In wireless communications, the transmitted signal rarely travels along a single, direct line-of-sight path. Instead, the signal reflects and scatters off surfaces such as buildings, walls, and other objects, creating multiple copies of the signal that arrive at the receiver at different times. This phenomenon is known as multi-path propagation. \\
 To accurately represent this, we use a multi-path channel model. The channel is modeled as having $L$ distinct paths. Each $l$-th path is characterized by its complex gain $\alpha_l$, physical propagation delay $\tau_l$, and an angle of departure (AoD) $\theta_{li}$. Furthermore, each path $l$ may itself consist of $\mu_l$ non-resolvable sub-paths. The total channel vector for the $l$-th path, $\vb{h}_l$, is therefore a composite of all its sub-paths~\cite{10970425}.
 \begin{equation}\label{eq:channel_vector}
-    \vb{h}_l=\alpha_l \sum_{i=1}^{\mu_l} v_{li}\vb{a}_t(\theta_{li})
+    \vb{h}_l = \alpha_l \sum_{i=1}^{\mu_l} v_{li} \vb{a}_t(\theta_{li})
 \end{equation}
 Here, $v_{li}$ is the complex coefficient of the $i$-th sub-path within the $l$-th path, and $\vb{a}_t(\theta_{li})$ is the transmit array response vector corresponding to the AoD $\theta_{li}$. For a Uniform Linear Array (ULA) with $M_t$ antennas, the array response vector is defined in \eqref{eq:steering_vector}. $d$ is the antenna spacing and $\lambda$ is the wavelength. The array response vector captures the phase shifts across the antenna array due to the angle of departure,
 resulting in a channel vector $\vb{h}_l$ for that path.\\
@@ -90,15 +66,27 @@ The total received signal $y[n]$ is the convolution of the transmitted signal $\
     y[n] = \sum_{q=0}^Q \vb{h}_{\text{DL}}^H[q] \vb{x}[n-q] + \vb{z}[n]
 \end{equation}
 \section{Delay Alignment Modulation (DAM) with Hybrid Beamforming}\label{sec:dam}
+The core principle of Delay Alignment Modulation (DAM) is to pre-emptively mitigate the ISI caused by multi-path propagation (as seen in \eqref{eq:received_signal}) by using two techniques at the transmitter: \textbf{delay pre-compensation} and \textbf{path-based beamforming} \cite{10970425}.
+In a practical system with a hybrid architecture, the transmitted signal $\vb{x}[n]$ is formed as a superposition of $L'$ delayed and beamformed symbols. $L'$ is the number of dominant, resolvable paths (or clusters) that we choose to align. The signal is shown in \eqref{eq:transmitted_signal}.
 \begin{equation}\label{eq:transmitted_signal}
     \vb{x}[n]=\vb{F}_{\text{RF}}\sum_{l=1}^{L'} \vb{f}_{\text{BB},l}s[n-\kappa_l]
 \end{equation}
+Here, $\vb{F}_{\text{RF}}$ is the $M_t \times M_{\text{RF}}$ analog beamforming matrix, $\vb{f}_{\text{BB},l}$ is the $M_{\text{RF}} \times 1$ digital beamforming vector for the $l$-th path, $s[n]$ is the data symbol, and $\kappa_l$ is the intentional pre-delay applied to the $l$-th path.
+Substituting this signal into our tap-based channel model \eqref{eq:received_signal} gives the received signal in \eqref{eq:received_signal_dam}.
 \begin{equation}\label{eq:received_signal_dam}
     y[n]=\sum_{q=0}^Q \sum_{l=1}^{L'} \vb{h}_{\text{DL}}^H[q] \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l} s[n-\kappa_l-q] + z[n]
 \end{equation}
+Solving for $\vb{F}_{\text{RF}}$ and $\vb{f}_{\text{BB},l}$ jointly is complex. To find the optimal beamformer, we first consider the ideal, unconstrained fully-digital beamformer $\vb{f}_l \in \mathbb{C}^{M_t \times 1}$, where $\vb{f}_l = \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l}$. This $\vb{f}_l$ will serve as the optimal target for our hybrid approximation in the next chapter.
+
+The key to DAM is to select the pre-delays $\kappa_l$ to align the $L'$ strongest taps $\{q_l\}_{l=1}^{L'}$ at a single time instant. We set $\kappa_l = q_{\max} - q_l$, where $q_{\max} = \max(q_l)$. This forces all desired signal components to arrive at the receiver at time $n - q_{\max}$.
+
+With this substitution, the received signal can be decomposed into its desired part and the residual ISI, as shown in \eqref{eq:received_signal_dam2}.
 \begin{equation}\label{eq:received_signal_dam2}
     y[n]=\left\{\sum_{l=1}^{L'} \vb{h}_{\text{DL}}^H[q_l] \vb{f}_l\right\} s[n-q_{max}] + \sum_{l=1}^{L'} \sum_{q\neq q_l}^Q \vb{h}_{\text{DL}}^H[q] \vb{f}_l s[n-q_{max}+q_l - q] + z[n]
 \end{equation}
+
+To analyze the ISI term, we group all signal components that arrive at the same time offset $i = q_l - q$. We define the effective ISI channel $\vb{g}_l^H[i]$ as the contribution of the $l$-th path beamformer to the $i$-th ISI tap, as shown in \eqref{eq:g_definition}.
+
 \begin{equation}\label{eq:g_definition}
     \vb{g}_l^H[i]=
     \begin{cases}
@@ -106,6 +94,7 @@ The total received signal $y[n]$ is the convolution of the transmitted signal $\
     \vb{0}, & \text{otherwise}.
 \end{cases}
 \end{equation}
+Using this definition, the received signal can be rewritten in the clean form of \eqref{eq:received_signal_dam3}, which explicitly separates the desired signal at $n - q_{\max}$ from the ISI at all other time offsets $i \neq 0$.
 \begin{equation}\label{eq:received_signal_dam3}
     y[n] =
     \left(
@@ -122,6 +111,7 @@ The total received signal $y[n]$ is the convolution of the transmitted signal $\
     s[n - q_{\max} + i]
     + z[n].
 \end{equation}
+From this, the Signal-to-Interference-plus-Noise Ratio (SINR) is the power of the desired signal divided by the sum of the power of all ISI taps and the noise power $\sigma^2$.
 \begin{equation}\label{eq:sinr_dam}
     \gamma
 =
@@ -251,12 +241,12 @@ Our methodology, which will be detailed in Chapter~\ref{chap:design} and~\ref{ch
 The final performance metric is the achievable rate $R = \log_2(1 + \gamma_{\text{eval}})$. This formulation allows us to directly quantify the performance loss from using the simpler, but physically inaccurate, `NB-DAM` and `SA-DAM` models for hybrid beamformer design.
 
 \chapter{Proposed Hybrid Beamforming Design}\label{chap:design}
-As formulated in Section~\ref{sec:problem}, our core task is to design a practical hybrid beamformer $(\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}})$ that approximates an ideal, fully-digital target $\vb{F}_{\text{opt}}$. This chapter details the specific two-stage methodology and algorithms used to achieve this, as implemented in our simulations.
+As formulated in Section~\ref{sec:problem}, our core task is to design a practical hybrid beamformer $(\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}})$ that approximates an ideal, fully-digital target $\vb{F}_{\text{opt}}$. This chapter details the specific two-stage methodology and algorithms used to achieve this.
 
 First, we define the ideal target $\vb{F}_{\text{opt}}$ by solving the fully-digital MMSE problem. Second, we describe the Orthogonal Matching Pursuit (OMP) algorithm, which is the sparse approximation technique used to solve the matrix factorization problem in \eqref{eq:matrix_factorization}. Finally, we detail the construction of the channel-aware beamforming dictionary, which is a critical component for the OMP algorithm's success.
 
 \section{Stage 1: Ideal Fully-Digital MMSE Beamformer}
-The first stage is to compute the theoretical "target" beamformer, $\vb{F}_{\text{opt}}$, which we aim to approximate. This target is the optimal fully-digital beamformer that maximizes the SINR. As shown in Section~\ref{sec:dam}, the SINR is maximized by the MMSE solution \cite{10970425}.
+The first stage is to compute the theoretical "target" beamformer, $\vb{F}_{\text{opt}}$, which we aim to approximate. This target is the optimal fully-digital beamformer that maximizes the SINR. As shown in Section~\ref{sec:dam}, the SINR is maximized by the MMSE solution.
 
 This solution is given by \eqref{eq:f_mmse_bar}, which we restate here from Chapter 2:
 \begin{equation}
@@ -268,7 +258,7 @@ where $\mathbf{C}$ is the interference-plus-noise covariance matrix, defined as:
 \end{equation}
 The resulting $\bar{\vb{f}}^{\mathrm{MMSE}}$ is a stacked vector of size $(M_t L' \times 1)$. To create our target matrix $\vb{F}_{\text{opt}}$, we simply reshape this vector into an $(M_t \times L')$ matrix, where each $l$-th column corresponds to the ideal beamforming vector for the $l$-th selected tap.
 
-As per our problem formulation, this entire calculation is performed independently for each of the three channel models. This yields three distinct ideal beamforming matrices, which form the targets for our hybrid approximation:
+To address the problem defined in Section~\ref{sec:problem}, this entire calculation is performed independently for each of the three channel models. This yields three distinct ideal beamforming matrices, which form the targets for our hybrid approximation:
 \begin{itemize}
     \item $\vb{F}_{\text{opt}}^{\text{NB}} = \text{Reshape}(\text{MMSE}(\vb{h}_{\text{NB-DAM}}))$
     \item $\vb{F}_{\text{opt}}^{\text{SA}} = \text{Reshape}(\text{MMSE}(\vb{h}_{\text{SA-DAM}}))$
@@ -276,13 +266,13 @@ As per our problem formulation, this entire calculation is performed independent
 \end{itemize}
 
 \section{Stage 2: Hybrid Approximation via Orthogonal Matching Pursuit}
-With the ideal target $\vb{F}_{\text{opt}}$ defined, the second stage is to solve the practical approximation problem from \eqref{eq:matrix_factorization}. This involves finding the analog matrix $\vb{F}_{\text{RF}}$ and digital matrix $\vb{F}_{\text{BB}}$ that minimize the approximation error, subject to the hardware constraints.
+With the ideal target $\vb{F}_{\text{opt}}$ defined, the second stage is to solve the practical approximation problem from \eqref{eq:matrix_factorization}. This involves finding the analog beamforming matrix $\vb{F}_{\text{RF}}$ and digital beamforming matrix $\vb{F}_{\text{BB}}$ that minimize the approximation error, subject to the hardware constraints.
 
-This problem is non-convex due to the constant-modulus constraint on $\vb{F}_{\text{RF}}$. We solve it using a greedy sparse recovery algorithm, **Orthogonal Matching Pursuit (OMP)**, which is well-suited for this task \cite{10970425}. The OMP algorithm iteratively constructs the analog beamformer $\vb{F}_{\text{RF}}$ column by column.
+This problem is non-convex due to the constant-modulus constraint on $\vb{F}_{\text{RF}}$. We solve it using a greedy sparse recovery algorithm, Orthogonal Matching Pursuit (OMP), which is well-suited for this task \cite{6717211}. The OMP algorithm iteratively constructs the analog beamformer $\vb{F}_{\text{RF}}$ column by column.
 
 
 
-The process, as implemented in our simulation's \texttt{orthogonal\_matching\_pursuit\_improved} function, is as follows:
+The process is as follows:
 
 \begin{enumerate}
     \item \textbf{Initialization:} Start with an empty analog beamformer $\vb{F}_{\text{RF}}^{(0)}$ (a matrix with 0 columns) and set the residual matrix $\vb{F}_{\text{res}} = \vb{F}_{\text{opt}}$. Set the iteration counter $k=1$.
@@ -296,11 +286,11 @@ The process, as implemented in our simulation's \texttt{orthogonal\_matching\_pu
 
     \item \textbf{Update Digital Beamformer:} Re-calculate the optimal digital beamformer $\vb{F}_{\text{BB}}^{(k)}$ by finding the regularized least-squares solution that projects $\vb{F}_{\text{opt}}$ onto the subspace now spanned by $\vb{F}_{\text{RF}}^{(k)}$:
     \begin{equation}
-        \vb{F}_{\text{BB}}^{(k)} = \left( (\vb{F}_{\text{RF}}^{(k)})^H \vb{F}_{\text{RF}}^{(k)} + \gamma \mathbf{I} \right)^{-1} (\vb{F}_{\text{RF}}^{(k)})^H \vb{F}_{\text{opt}}
+        \vb{F}_{\text{BB}}^{(k)} = \left( (\vb{F}_{\text{RF}}^{(k)})^H \vb{F}_{\text{RF}}^{(k)} + \delta \mathbf{I} \right)^{-1} (\vb{F}_{\text{RF}}^{(k)})^H \vb{F}_{\text{opt}}
     \end{equation}
-    where $\gamma$ is a small regularization factor for numerical stability.
+    where $\delta$ is a small regularization factor for numerical stability.
 
-    \item \textbf{Update Residual:} Update the residual matrix to represent the remaining, un-approximated portion of $\vb{F}_{\text{opt}}$:
+    \item \textbf{Update Residual:} Update the residual matrix to represent the remaining portion of $\vb{F}_{\text{opt}}$:
     \begin{equation}
         \vb{F}_{\text{res}} = \vb{F}_{\text{opt}} - \vb{F}_{\text{RF}}^{(k)} \vb{F}_{\text{BB}}^{(k)}
     \end{equation}
@@ -315,7 +305,7 @@ The performance of the OMP algorithm is critically dependent on the quality of t
 
 A simple approach would be to populate $\mathcal{A}_t$ with array response vectors pointing in many different, finely-quantized directions. However, this creates a very large dictionary, making the search in Step 2 of the OMP algorithm computationally expensive.
 
-Given that mmWave and THz channels are spatially sparse, with power concentrated along the $L$ propagation paths, we adopt a more intelligent, \textbf{channel-aware dictionary} \cite{10970425}. As implemented in our \texttt{create\_omp\_dictionary} function, we construct the dictionary $\mathcal{A}_t$ using the *actual Angles of Departure (AoDs)* of the channel's sub-paths.
+Given that mmWave and THz channels are spatially sparse, with power concentrated along the $L$ propagation paths, we adopt a more intelligent, channel-aware dictionary. We construct the dictionary $\mathcal{A}_t$ using the actual Angles of Departure (AoDs) of the channel's sub-paths.
 
 The dictionary is formed by taking the set of all sub-path AoDs, $\{\theta_{li}\}$, from the physical channel model and creating an array response vector for each one:
 \begin{equation}
@@ -324,7 +314,7 @@ The dictionary is formed by taking the set of all sub-path AoDs, $\{\theta_{li}\
 This approach creates a compact and highly-relevant dictionary, ensuring that the OMP algorithm selects analog beams that are already pointed in directions where significant channel energy exists. In our simulation, if the number of paths is very small, we augment this dictionary with a standard quantized grid of angles to ensure full spatial coverage.
 
 \section{Complete Design and Evaluation Workflow}\label{sec:workflow}
-Our simulation script (\texttt{run\_all\_simulations.m}) combines these stages into a complete workflow to test our central hypothesis. This workflow is executed for every single Monte Carlo realization to average out the effects of random channel generation.
+Our simulation script combines these stages into a complete workflow to test our central hypothesis. This workflow is executed for every single Monte Carlo realization to average out the effects of random channel generation.
 
 The process is as follows:
 \begin{enumerate}
@@ -341,22 +331,198 @@ The process is as follows:
 
     \item \textbf{Design Beamformers (in parallel):}
     \begin{enumerate}
-        \item \textbf{(NB Design)} $\vb{F}_{\text{opt}}^{\text{NB}}$ is computed from $\vb{h}_{\text{NB-DAM}}$. OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{NB}}, \vb{F}_{\text{BB}}^{\text{NB}})$.
-        \item \textbf{(SA Design)} $\vb{F}_{\text{opt}}^{\text{SA}}$ is computed from $\vb{h}_{\text{SA-DAM}}$. OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{SA}}, \vb{F}_{\text{BB}}^{\text{SA}})$.
-        \item \textbf{(WB Design)} $\vb{F}_{\text{opt}}^{\text{WB}}$ is computed from $\vb{h}_{\text{WB-DAM}}$. OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{WB}}, \vb{F}_{\text{BB}}^{\text{WB}})$.
+        \item \textbf{(NB Design)} $\vb{F}_{\text{opt}}^{\text{NB}}$ is computed from $\vb{h}_{\text{NB-DAM}}$. \\ OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{NB}}, \vb{F}_{\text{BB}}^{\text{NB}})$.
+        \item \textbf{(SA Design)} $\vb{F}_{\text{opt}}^{\text{SA}}$ is computed from $\vb{h}_{\text{SA-DAM}}$. \\ OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{SA}}, \vb{F}_{\text{BB}}^{\text{SA}})$.
+        \item \textbf{(WB Design)} $\vb{F}_{\text{opt}}^{\text{WB}}$ is computed from $\vb{h}_{\text{WB-DAM}}$. \\ OMP is then used to find $(\vb{F}_{\text{RF}}^{\text{WB}}, \vb{F}_{\text{BB}}^{\text{WB}})$.
     \end{enumerate}
 
     \item \textbf{Evaluate on Ground Truth:} All three resulting hybrid beamformers are evaluated on the one, true channel model, $\vb{h}_{\text{WB-DAM}}$, by calculating their resulting SINR $\gamma_{\text{eval}}$ using \eqref{eq:sinr_evaluation}.
 
     \item \textbf{Calculate Rate:} The final achievable rate $R = \log_2(1 + \gamma_{\text{eval}})$ is stored for all three designs.
 \end{enumerate}
-This workflow ensures a fair and direct comparison. It isolates the performance difference caused purely by the \emph{choice of channel model} used during the design stage. The results of this workflow are presented in the following chapter.
+This workflow ensures a fair and direct comparison. It isolates the performance difference caused purely by the choice of channel model used during the design stage. The results of this workflow are presented in the following chapter.
+
 \chapter{Simulation Results and Analysis}\label{chap:results}
+In this chapter, we present the numerical results of our Monte Carlo simulations to evaluate the performance of the three DAM channel models: narrowband (`NB-DAM`), sub-array (`SA-DAM`), and the ground-truth wideband (`WB-DAM`). All simulations were conducted in MATLAB, and the results are averaged over \num{1000} independent channel realizations.
+
+We conduct three main experiments to analyze the achievable rate (calculated as $R = \log_2(1 + \gamma_{\text{eval}})$) under different system conditions:
+\begin{enumerate}
+    \item \textbf{Achievable Rate vs. SNR}
+    \item \textbf{Achievable Rate vs. Number of Antennas ($M_t$)}
+    \item \textbf{Achievable Rate vs. System Bandwidth ($B$)}
+\end{enumerate}
+In each experiment, one parameter is varied while all others are held at their default values, which are defined in the following section.
+
 \section{Simulation Environment and Parameters}\label{sec:environment}
+The baseline simulation parameters are summarized in Table~\ref{tab:sim_params}. These values are held constant unless specified otherwise in a particular experiment. The parameters are based on a typical mmWave communication scenario, consistent with the reference literature \cite{10970425}.
+
+Our simulation's default setup assumes a \SI{28}{\giga\hertz} mmWave system with a \SI{128}{\mega\hertz} bandwidth. The transmitter is a large-scale ULA with $M_t = 128$ antennas and a practical hybrid architecture with $M_{\text{RF}} = 8$ RF chains. This corresponds to an $M_{\text{RF}}/L = 2$ ratio, which is noted in \cite{10970425} as a region where hybrid beamforming can closely approximate fully-digital performance.
+
+The channel is modeled with $L=4$ sparse multi-paths, each with a single sub-path, distributed over a maximum delay spread of \SI{1000}{\nano\second}. The signal pulse shaping uses a standard Root-Raised Cosine (RRC) filter with a rolloff factor of $\beta = 0.22$. The default transmit power is normalized to $P=1$, and the noise power is set to $\sigma^2 = 0.01$, resulting in a default SNR of $\SI{20}{\deci\bel}$.
+
+% Table of Simulation Parameters
+\begin{table}[htp]
+    \centering
+    \caption{Default Simulation Parameters}
+    \label{tab:sim_params}
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        \textbf{Parameter} & \textbf{Symbol} & \textbf{Value} \\
+        \midrule
+        \multicolumn{3}{l}{\textit{System Parameters}} \\
+        Number of Antennas (Default) & $M_t$ & $128$ \\
+        Number of RF Chains & $M_{\text{RF}}$ & $8$ \\
+        Carrier Frequency & $f_c$ & \SI{28}{\giga\hertz} \\
+        System Bandwidth (Default) & $B$ & \SI{128}{\mega\hertz} \\
+        Sampling Period (Default) & $T_s$ & $1/B \approx \SI{7.81}{\nano\second}$ \\
+        Antenna Spacing & $d$ & $\lambda/2$ \\
+        Normalized Transmit Power & $P$ & $1.0$ \\
+        Noise Power (Default) & $\sigma^2$ & $0.01$ \\
+        Default SNR ($P/\sigma^2$) & --- & \SI{20}{\deci\bel} \\
+        \addlinespace
+        \multicolumn{3}{l}{\textit{Channel Model Parameters}} \\
+        Number of Paths & $L$ & $4$ \\
+        Max Sub-Paths per Path & $\mu_{\max}$ & $1$ \\
+        Maximum Delay Spread & $\tau_{\max}$ & \SI{1000}{\nano\second} \\
+        Path AoD Distribution & $\theta_{li}$ & $U(-\pi/3, \pi/3)$ \\
+        RRC Rolloff Factor & $\beta$ & $0.22$ \\
+        RRC Samples per Symbol & --- & $8$ \\
+        RRC Filter Taps & --- & $61$ \\
+        \addlinespace
+        \multicolumn{3}{l}{\textit{DAM \& Simulation Parameters}} \\
+        Tap Selection Threshold & $C$ & $0.01$ \\
+        Number of SA-DAM Sub-blocks & $K$ & $8$ \\
+        Monte Carlo Realizations & --- & \num{1000} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Based on the default parameters in Table~\ref{tab:sim_params}, we define the three experiments:
+
+\begin{itemize}
+    \item \textbf{Rate vs. SNR:} The transmit power is fixed at $P=1$ and the noise power $\sigma^2$ is varied such that the SNR ($P/\sigma^2$) sweeps from \SIrange{-10}{20}{\deci\bel}. All other parameters are fixed (e.g., $M_t=128$, $B=\SI{128}{\mega\hertz}$).
+    
+    \item \textbf{Rate vs. $M_t$:} The number of transmit antennas $M_t$ is varied as $[32, 64, 128, 256]$. All other parameters are fixed (e.g., $\text{SNR}=\SI{20}{\deci\bel}$, $B=\SI{128}{\mega\hertz}$).
+    
+    \item \textbf{Rate vs. Bandwidth:} The system bandwidth $B$ is varied as $[64, 128, 256, 512]$ \si{\mega\hertz}, which correspondingly changes the sampling time $T_s$. All other parameters are fixed (e.g., $\text{SNR}=\SI{20}{\deci\bel}$, $M_t=128$).
+\end{itemize}
+
+
 \section{Result 1: Achievable Rate vs. SNR}\label{sec:result1}
+The first experiment evaluates the performance of the three models as the Signal-to-Noise Ratio (SNR) increases from \SIrange{-10}{20}{\deci\bel}. The number of antennas ($M_t=128$), number of RF chains ($M_{\text{RF}}=8$), and bandwidth ($B=\SI{128}{\mega\hertz}$) are held at their default values as specified in Table~\ref{tab:sim_params}.
+
+The simulation results are presented in Figure~\ref{fig:snr_result}. The plot shows four curves: the three hybrid beamformers (designed using the `NB-DAM`, `SA-DAM`, and `WB-DAM` models, respectively) and the ideal, fully-digital benchmark (`WB-DAM (Digital)`).
+
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{SNR_1000.png} 
+    \caption[Achievable Rate vs. SNR]{Achievable Rate vs. SNR for Hybrid and Digital Beamformers. All models are evaluated on the `WB-DAM` ground truth channel.}
+    \label{fig:snr_result}
+\end{figure}
+
+As expected, the \texttt{WB-DAM (Digital)} beamformer (black, dashed line) provides the upper-bound performance. It represents the theoretical maximum SINR achievable with the "ground truth" channel, unconstrained by a hybrid architecture, and thus serves as our ideal benchmark.
+
+The key observation is that the \texttt{WB-DAM (Hybrid)} (blue, diamond) and \texttt{SA-DAM (Hybrid)} (red, square) curves track this ideal digital benchmark almost perfectly across the entire SNR range. The performance of the beamformer designed with the \texttt{SA-DAM} approximation is visually indistinguishable from the one designed with the "perfect" \texttt{WB-DAM} model. This yields two important insights:
+\begin{itemize}
+    \item The OMP algorithm (detailed in Section~\ref{sec:workflow}) is highly effective at finding a hybrid approximation for the ideal beamformer. The minimal gap between the hybrid and digital \texttt{WB-DAM} curves shows that the $M_{\text{RF}}=8$ RF chains are sufficient to capture the channel's spatial degrees of freedom.
+    \item The \texttt{SA-DAM} model, which approximates the channel by sub-array (with $K=8$), is a sufficiently-accurate model for this system configuration. The beamformer it produces has virtually identical performance to the one designed with the full wideband model.
+\end{itemize}
+
+In contrast, the \texttt{NB-DAM (Hybrid)} model (green, circle) exhibits a significant performance degradation, particularly at high SNR.
+
+At low SNR (from \SIrange{-10}{0}{\deci\bel}), the \texttt{NB-DAM} model performs reasonably well, as the system performance is primarily limited by the additive noise ($\sigma^2$). In this \textbf{noise-limited regime}, the modeling inaccuracies of \texttt{NB-DAM} are masked by the high noise floor.
+
+However, as the SNR increases beyond \SI{10}{\deci\bel}, the performance of the \texttt{NB-DAM} model saturates, hitting a "performance ceiling" at approximately \SI{6.0}{bps/Hz}. This occurs because the system is no longer noise-limited; it has become \textbf{interference-limited}. 
+
+The \texttt{NB-DAM} model, by ignoring the spatial wideband effect, calculates an incorrect ideal beamformer $\vb{F}_{\text{opt}}^{\text{NB}}$. The resulting hybrid beamformer $(\vb{F}_{\text{RF}}^{\text{NB}}, \vb{F}_{\text{BB}}^{\text{NB}})$ is therefore not designed to null the true ISI of the wideband channel. At high SNR, this un-cancelled residual ISI becomes the dominant factor limiting the SINR, preventing any further increase in achievable rate. This result clearly demonstrates that failing to account for the spatial wideband effect leads to a flawed beamformer design that performs poorly in high-SNR scenarios.
 \section{Result 2: Achievable Rate vs. Number of Antennas}\label{sec:result2}
+The second experiment investigates the impact of the array aperture size on performance. We vary the number of transmit antennas $M_t$ from $32$ to $256$, while keeping the SNR fixed at its default of $\SI{20}{\deci\bel}$ and the bandwidth at $\SI{128}{\mega\hertz}$. Critically, the number of RF chains is held constant at $M_{\text{RF}}=8$ for all hybrid models. The results are shown in Figure~\ref{fig:mt_result}.
+
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Mt_1000.png} % This is the file you uploaded
+    \caption[Achievable Rate vs. Number of Antennas]{Achievable Rate vs. Number of Antennas ($M_t$). The SNR is fixed at $\SI{20}{\deci\bel}$ and $M_{\text{RF}}=8$.}
+    \label{fig:mt_result}
+\end{figure}
+
+This experiment reveals the most significant finding of our study.
+
+First, as the number of antennas $M_t$ increases, the performance of the \textbf{\texttt{NB-DAM (Hybrid)}} model (green, circle) \textbf{collapses}. While it performs reasonably well for a small array ($M_t=32$), its achievable rate drops sharply as the array size grows, falling to its lowest point at $M_t=256$.
+
+
+This behavior provides clear evidence of the spatial wideband effect. The \texttt{NB-DAM} model, which uses a single delay $\tau_l$ for all antennas, fails to recognize that the physical propagation delay is different for each antenna, as shown in \eqref{eq:antenna_delay}. As the array size $M_t$ increases, the physical distance between the first and last antenna grows, and the time difference $\tau_{l,M_t} - \tau_{l,1}$ becomes larger.
+
+The \texttt{NB-DAM} model's assumption becomes increasingly incorrect, leading to a severely flawed beamformer design. This flawed beamformer fails to align the taps in time at the receiver, creating massive residual ISI that overwhelms the system and destroys the achievable rate. This confirms that for large-scale antenna arrays, the \texttt{NB-DAM} model is not just suboptimal; it is fundamentally incorrect and leads to system failure.
+
+In contrast, the \texttt{SA-DAM} (red, square) and \texttt{WB-DAM} (blue, diamond) models are robust to the increase in antenna elements. Both models successfully account for the per-antenna delay variations---the \texttt{WB-DAM} perfectly and the \texttt{SA-DAM} as a close approximation. As a result, they both design effective beamformers that correctly align the channel taps, and their performance remains high and stable.
+
+A final observation is the performance gap between the hybrid models and the ideal \texttt{WB-DAM (Digital)} benchmark (black, dashed line). The digital beamformer's rate scales with $M_t$ because it can exploit the full \textbf{array gain} of the larger aperture. The hybrid models, however, flatten out around $\SI{7.6}{bps/Hz}$. This is because their performance is ultimately constrained by the fixed number of RF chains ($M_{\text{RF}}=8$). While the larger array provides a better analog beam selection, the system cannot leverage the full array gain without more digital RF chains. Nonetheless, the \texttt{SA-DAM} and \texttt{WB-DAM} hybrid designs successfully avoid the performance collapse seen in the narrowband model, proving their necessity for large arrays.
+
 \section{Result 3: Achievable Rate vs. Bandwidth}\label{sec:result3}
+In the final experiment, we analyze the impact of system bandwidth on model performance. We vary the bandwidth $B$ from 64~\si{\mega\hertz} to 512~\si{\mega\hertz}
+, which in turn changes the sampling time $T_s = 1/B$. The SNR is fixed at $\SI{20}{\deci\bel}$ and the number of antennas is fixed at $M_t=128$.
+
+The results, shown in Figure~\ref{fig:bw_result}, are just as dramatic as those in the previous section. We observe a catastrophic performance collapse for the \textbf{\texttt{NB-DAM (Hybrid)}} model (green, circle) as the bandwidth increases. In contrast, the \texttt{SA-DAM} and \texttt{WB-DAM} models remain highly effective and stable.
+
+\begin{figure}[htp]
+    \centering
+    \includegraphics[width=0.5\textwidth]{Bw_1000.png} 
+    \caption[Achievable Rate vs. Bandwidth]{Achievable Rate vs. System Bandwidth ($B$). The SNR is fixed at $\SI{20}{\deci\bel}$ and $M_t=128$.}
+    \label{fig:bw_result}
+\end{figure}
+
+This failure is a direct consequence of the relationship between bandwidth and time resolution. The spatial wideband effect is fundamentally a 'time-delay' phenomenon, where a signal arrives at different antennas at slightly different times ($\tau_{l,m}$). The system's "view" of this effect is determined by the sampling period $T_s$.
+
+
+\begin{itemize}
+    \item \textbf{At Low Bandwidth ($B=\SI{64}{\mega\hertz}$):} The sampling period $T_s$ is relatively long. The small per-antenna time delays are "sub-tap" (i.e., $\tau_{l,M_t} - \tau_{l,1} < T_s$). The \texttt{NB-DAM} model's assumption that all delays are identical is a "good enough" approximation, so it performs reasonably well (though still worse than the other models).
+
+    \item \textbf{At High Bandwidth ($B=\SI{512}{\mega\hertz}$):} The sampling period $T_s$ is now very short. The physical time delay across the array, which the \texttt{NB-DAM} model 'ignores', now spans 'multiple taps'. The model's assumption is no longer just inaccurate; it is fundamentally wrong.
+\end{itemize}
+
+Because the \texttt{NB-DAM} model is "blind" to this tap-spreading, it designs a beamformer $\vb{F}_{\text{opt}}^{\text{NB}}$ that fails to align the taps of the true wideband channel. This creates a massive amount of un-cancelled ISI, which, as seen in the \SI{20}{\deci\bel} SNR (interference-limited) regime, dominates the system and causes the achievable rate to plummet.
+
+Once again, the \texttt{SA-DAM (Hybrid)} (red, square) and \texttt{WB-DAM (Hybrid)} (blue, diamond) models are robust to this change. Because they correctly model the per-antenna (or per-sub-array) delays, their beamformer designs remain valid and effective even as $T_s$ shrinks. Their performance is stable, with the \texttt{SA-DAM} model again proving to be an excellent approximation of the full \texttt{WB-DAM} model.
+
+Finally, the ideal \texttt{WB-DAM (Digital)} benchmark (black, dashed line) shows a slight increase in rate as bandwidth grows. This is expected, as a wider bandwidth provides higher time resolution, which allows the system to resolve more multi-path components, increasing the channel's frequency diversity. The fully-digital system can exploit this, while the hybrid models are limited by their $M_{\text{RF}}=8$ RF chains.
+
 \chapter{Conclusion}\label{chap:conclusion}
+This thesis has conducted a comprehensive investigation into the practical design of hybrid analog/digital beamformers for Delay Alignment Modulation (DAM) systems, focusing on the critical, but often-overlooked, spatial wideband effect. As mmWave and THz systems move towards larger antenna arrays ($M_t$) and wider bandwidths ($B$), this effect, also known as "beam squint," introduces per-antenna time delays that can severely degrade system performance if not properly modeled.
+
+Our work sought to answer a fundamental question: how much does channel model accuracy matter when designing a practical, hybrid beamformer?
+
+To answer this, we implemented and compared three distinct channel models within a full Monte Carlo simulation environment:
+\begin{enumerate}
+    \item \textbf{`NB-DAM`:} The traditional narrowband model, which ignores the spatial wideband effect entirely.
+    \item \textbf{`WB-DAM`:} The "ground truth" wideband model, which accurately computes a unique delay for every single antenna element.
+    \item \textbf{`SA-DAM`:} A proposed intermediate model that approximates the channel by partitioning the array into sub-blocks, each sharing a single representative delay.
+\end{enumerate}
+Our methodology was to design a practical hybrid beamformer using each of these three models (via OMP) and then, critically, evaluate all three on the "ground truth" \texttt{WB-DAM} channel to measure their real-world performance.
+
+\section*{Summary of Findings and Contributions}
+The simulation results from Chapter~\ref{chap:results} led to several clear and significant conclusions. The primary contributions of this thesis are:
+
+\begin{itemize}
+    \item \textbf{This work provides a definitive quantification of the failure of narrowband models for wideband systems.} Our results in Section~\ref{sec:result2} and Section~\ref{sec:result3} are clear. The \texttt{NB-DAM} model, which is the "default" assumption in much of the literature, is completely non-viable for large-scale DAM systems. Its performance does not merely degrade; it collapses catastrophically as $M_t$ or $B$ increases. We demonstrated that this is because the flawed model designs a beamformer that fails to cancel the true ISI of the wideband channel, leading to a performance ceiling in an interference-limited regime.
+    
+    
+
+    \item \textbf{This work validates the \texttt{SA-DAM} model as a highly-effective and computationally-efficient alternative.} Across all experiments (SNR, $M_t$, and $B$), the performance of the hybrid beamformer designed with the \texttt{SA-DAM} approximation was nearly identical to the one designed with the "perfect" \texttt{WB-DAM} model. This is a crucial finding, as it provides a practical path forward for system designers. It proves that one does not need to bear the full accuracy of the per-antenna \texttt{WB-DAM} model; a simpler sub-array approximation is sufficient to capture the essential physics and achieve near-optimal performance.
+    
+    \item \textbf{This work demonstrates the robustness of hybrid beamforming approximation (OMP) for DAM systems.} A secondary finding was that for a system with $L=4$ paths, $M_{\text{RF}}=8$ RF chains were sufficient to design a hybrid beamformer that closely tracked the performance of the ideal, fully-digital benchmark, especially in the low-to-mid SNR range.
+\end{itemize}
+
+In summary, this thesis has shown that while the spatial wideband effect is a system-breaking challenge, it is one that can be successfully overcome. The traditional narrowband assumption is obsolete for these systems, but a \texttt{SA-DAM} approximation provides a robust and practical solution.
+
+\section*{Limitations and Future Work}
+This research opens several avenues for future investigation:
+\begin{itemize}
+    \item \textbf{Optimal Sub-Array Partitioning:} Our \texttt{SA-DAM} model used a fixed number of sub-arrays ($K=8$). A future study could investigate the optimal $K$, analyzing the trade-off between model complexity (increasing $K$) and achievable rate.
+    
+    \item \textbf{Impact of Imperfect CSI:} Our simulation assumed perfect knowledge of the channel's physical parameters (AoDs) to build the OMP dictionary. A crucial next step would be to evaluate these models in a scenario with realistic channel estimation errors.
+    
+    \item \textbf{Multi-User (MU-MIMO) Scenarios:} This work focused on a single-user (MISO) link. Expanding this analysis to a multi-user scenario would be highly valuable, as the beamformers would need to manage both ISI and multi-user interference, placing even greater stress on the channel model's accuracy.
+\end{itemize}
 
 \printbibliography
 
