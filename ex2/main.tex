@@ -23,8 +23,8 @@
 \date{2025년 12월}
 \approvaldate{2025년 12월 15일}
 
-\koreankeywords{서울대학교, 공과대학, 학사학위논문, 템플릿}
-\englishkeywords{Seoul National University, College of Engineering, Bachelor's Thesis, Template}
+\koreankeywords{지연 정렬 변조, 하이브리드 빔포밍, 공간 광대역 효과, 빔 스퀸트, 심볼 간 간섭, 밀리미터파 통신, 서브 어레이 구조}
+\englishkeywords{Delay Alignment Modulation (DAM), Hybrid Beamforming, Spatial Wideband Effect, Beam Squint, Inter-Symbol Interference (ISI), mmWave Communications, Sub-array Architecture}
 
 
 \begin{document}
@@ -32,7 +32,9 @@
 
 \pagenumbering{roman}
 \begin{abstract}
-    asdf
+    Delay Alignment Modulation (DAM) is a promising technique for mitigating Inter-Symbol Interference (ISI) in millimeter-wave (mmWave) and Terahertz (THz) communications by leveraging the channel's multi-path sparsity. While previous research has established the theoretical benefits of DAM, practical implementation faces two significant challenges: the hardware constraints of hybrid analog/digital beamforming and the physical reality of the spatial wideband effect, also known as beam squint. In large-scale antenna arrays with wide bandwidths, the spatial wideband effect introduces frequency-dependent phase shifts that manifest as distinct propagation delays for each antenna element, violating the standard narrowband assumption.
+
+    This thesis investigates the impact of channel model accuracy on the design of practical hybrid beamformers for DAM systems. We formulate and compare three distinct channel models: the conventional narrowband model (NB-DAM), which ignores per-antenna delays; the ground-truth wideband model (WB-DAM), which fully accounts for them; and a proposed sub-array approximation (SA-DAM). Using the Orthogonal Matching Pursuit (OMP) algorithm, we design hybrid beamformers based on each model and evaluate their performance in terms of achievable rate. Our simulation results demonstrate that the conventional narrowband model fails catastrophically as the number of antennas or system bandwidth increases, as it designs a beamformer that cannot cancel the true wideband ISI. Conversely, the proposed sub-array approximation (SA-DAM) is shown to be highly effective, achieving near-optimal performance comparable to the full wideband model while offering a computationally efficient solution for practical large-scale mmWave systems.
 \end{abstract}
 
 \tableofcontents
@@ -41,6 +43,44 @@
 
 \chapter{Introduction}\label{chap:introduction}
 \pagenumbering{arabic}
+\section{Background and Motivation}
+The exponential growth in global mobile data traffic is driving the evolution of wireless communication systems towards the sixth generation (6G). To meet the stringent requirements for ultra-high data rates and massive capacity, researchers are increasingly exploring the underutilized millimeter-wave (mmWave) and Terahertz (THz) frequency bands \cite{10970425}. These bands offer vast amounts of available bandwidth, enabling multi-gigabit-per-second transmission speeds.
+
+However, utilizing these high-frequency bands presents significant challenges. Signal propagation at mmWave and THz frequencies suffers from high path loss and severe atmospheric absorption. To compensate for this attenuation, transmitters must employ large-scale antenna arrays (Massive MIMO) to generate highly directional beams with high array gains. Consequently, future communication systems will be characterized by two defining features: \textbf{extremely wide bandwidths} and \textbf{extremely large antenna apertures}.
+
+In wideband transmission, the symbol duration ($T_s$) becomes extremely short. When such signals propagate through a multi-path environment, the delay spread of the channel often exceeds the symbol duration, causing severe Inter-Symbol Interference (ISI). If left unmitigated, ISI destroys the orthogonality of the transmitted symbols, leading to an irreducible error floor.
+
+Orthogonal Frequency Division Multiplexing (OFDM) is currently the dominant technique for handling ISI. By converting a frequency-selective wideband channel into multiple flat-fading narrowband subcarriers, OFDM effectively mitigates ISI. However, OFDM suffers from well-known drawbacks, including a high Peak-to-Average Power Ratio (PAPR) and sensitivity to carrier frequency offsets, which are particularly problematic for power-constrained mmWave/THz systems \cite{10970425}.
+
+Recently, \textbf{Delay Alignment Modulation (DAM)} has emerged as a promising alternative. By leveraging the spatial sparsity of mmWave channels and the high spatial resolution of large antenna arrays, DAM proactively aligns multi-path components at the receiver side, effectively eliminating ISI without the drawbacks of OFDM.
+
+\section{Problem Statement}
+While the theoretical potential of DAM is well-established, its practical implementation faces a critical physical constraint that is often overlooked in existing literature: the \textbf{spatial wideband effect}, also known as "beam squint."
+
+Most conventional research relies on the \textbf{narrowband assumption}, which assumes that the propagation delay of a signal is identical across all elements of an antenna array. While valid for small arrays or narrow bandwidths, this assumption breaks down in wideband massive MIMO systems. For a large array, the physical travel time of a wavefront across the array aperture can be significant relative to the short symbol period. This results in a frequency-dependent phase shift that causes the beam to "squint" or point in different directions for different frequencies.
+
+This thesis addresses a fundamental gap in the design of practical \textbf{hybrid beamforming} systems for DAM. When a hybrid beamformer is designed using the conventional narrowband model (which ignores these per-antenna delays), it fails to align the channel taps correctly in a real-world wideband environment. This mismatch between the assumed model and physical reality can lead to severe performance degradation, rendering the system ineffective.
+
+\section{Thesis Contribution}
+The primary objective of this thesis is to investigate the impact of the spatial wideband effect on DAM performance and to validate a practical modeling approach that overcomes it. The main contributions are summarized as follows:
+
+\begin{enumerate}
+    \item \textbf{Quantification of Narrowband Model Failure:} We rigorously analyze the performance of hybrid beamformers designed under the conventional narrowband assumption (`NB-DAM`). Through extensive simulations, we demonstrate that this model fails catastrophically as the number of antennas or system bandwidth increases, identifying the mechanism of failure as un-cancelled wideband ISI.
+    
+    \item \textbf{Validation of Sub-Array Architecture:} We propose and evaluate a sub-array based channel approximation (`SA-DAM`) as a practical solution. We demonstrate that by partitioning the large array into smaller sub-blocks, we can capture the essential spatial wideband characteristics with significantly reduced computational complexity compared to a full per-antenna model (`WB-DAM`).
+    
+    \item \textbf{Performance Analysis of Hybrid Beamforming:} Using the Orthogonal Matching Pursuit (OMP) algorithm, we verify that a practical hybrid architecture with a limited number of RF chains is sufficient to achieve near-optimal performance, provided the beamformer is designed using an accurate (wideband or sub-array) channel model.
+\end{enumerate}
+
+\section{Thesis Organization}
+The remainder of this thesis is organized as follows:
+\begin{itemize}
+    \item \textbf{Chapter~\ref{chap:background}} reviews the fundamental principles of multi-path channels, the mechanism of Delay Alignment Modulation (DAM), and the mathematical formulation of the spatial wideband effect.
+    \item \textbf{Chapter~\ref{chap:model}} defines the system architecture and explicitly formulates the three channel models (NB, SA, and WB) used in this study.
+    \item \textbf{Chapter~\ref{chap:design}} details the proposed hybrid beamforming design methodology, including the derivation of the ideal MMSE beamformer and the OMP approximation algorithm.
+    \item \textbf{Chapter~\ref{chap:results}} presents the simulation results, analyzing the achievable rate with respect to SNR, antenna number, and bandwidth, as well as a runtime complexity analysis.
+    \item \textbf{Chapter~\ref{chap:conclusion}} summarizes the findings and concludes the thesis.
+\end{itemize}
 
 % chapter 2 body
 \chapter{Background and Prior Research}\label{chap:background}
@@ -66,7 +106,7 @@ The total received signal $y[n]$ is the convolution of the transmitted signal $\
     y[n] = \sum_{q=0}^Q \vb{h}_{\text{DL}}^H[q] \vb{x}[n-q] + \vb{z}[n]
 \end{equation}
 \section{Delay Alignment Modulation (DAM) with Hybrid Beamforming}\label{sec:dam}
-The core principle of Delay Alignment Modulation (DAM) is to pre-emptively mitigate the ISI caused by multi-path propagation (as seen in \eqref{eq:received_signal}) by using two techniques at the transmitter: \textbf{delay pre-compensation} and \textbf{path-based beamforming} \cite{10970425}.
+The core principle of Delay Alignment Modulation (DAM) is to mitigate the ISI caused by multi-path propagation (as seen in \eqref{eq:received_signal}) by using two techniques at the transmitter: \textbf{delay pre-compensation} and \textbf{path-based beamforming} \cite{10970425}.
 In a practical system with a hybrid architecture, the transmitted signal $\vb{x}[n]$ is formed as a superposition of $L'$ delayed and beamformed symbols. $L'$ is the number of dominant, resolvable paths (or clusters) that we choose to align. The signal is shown in \eqref{eq:transmitted_signal}.
 \begin{equation}\label{eq:transmitted_signal}
     \vb{x}[n]=\vb{F}_{\text{RF}}\sum_{l=1}^{L'} \vb{f}_{\text{BB},l}s[n-\kappa_l]
@@ -137,15 +177,72 @@ From this, the Signal-to-Interference-plus-Noise Ratio (SINR) is the power of th
 \bar{\mathbf{f}}
 }. 
 \end{equation}
-where $\bar{\vb{h}}_{\text{DL}} = [\mathbf{h}_{\text{DL}}^T[q_1], \ldots, \mathbf{h}_{\text{DL}}^T[q_{L'}]]^T \in \mathbb{C}^{M_t L' \times 1}$, $\bar{\vb{f}} = [\mathbf{f}_1^T, \ldots, \mathbf{f}_{L'}^T]^T \in \mathbb{C}^{M_t L' \times 1}$, and $\mathbf{\bar{g}}[i] = [\mathbf{g}_1^T[i], \ldots, \mathbf{g}_{L'}^T[i]]^T \in \mathbb{C}^{M_t L' \times 1}$. To maximize the spectral efficiency of tap-based
+To solve for the optimal beamformer $\bar{\vb{f}}$, the SINR is written in a vectorized form using the stacked vectors $\bar{\vb{h}}_{\text{DL}}$, $\bar{\vb{f}}$, and $\bar{\mathbf{g}}[i]$, 
+where $\bar{\vb{h}}_{\text{DL}} = [\mathbf{h}_{\text{DL}}^T[q_1], \ldots, \mathbf{h}_{\text{DL}}^T[q_{L'}]]^T \in \mathbb{C}^{M_t L' \times 1}$, $\bar{\vb{f}} = [\mathbf{f}_1^T, \ldots, \mathbf{f}_{L'}^T]^T \in \mathbb{C}^{M_t L' \times 1}$, and $\mathbf{\bar{g}}[i] = [\mathbf{g}_1^T[i], \ldots, \mathbf{g}_{L'}^T[i]]^T \in \mathbb{C}^{M_t L' \times 1}$. 
+To maximize the spectral efficiency, we must maximize this SINR. The vector $\bar{\vb{f}}$ that maximizes this expression is the well-known Minimum Mean Square Error (MMSE) solution \cite{10970425}, given by \eqref{eq:f_mmse_bar}.
 \begin{equation}\label{eq:f_mmse_bar}
     \bar{\vb{f}}^{\mathrm{MMSE}}=\sqrt{P}\frac{\mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}}}{ \left\lVert \mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}} \right\rVert}
 \end{equation}
-where $\mathbf{C} \triangleq \sum_{i=-Q, i\neq 0}^{Q} \bar{\mathbf{g}}[i]\bar{\mathbf{g}}^{H}[i] + \sigma^{2}/P \mathbf{I}$, with $\lVert \bar{\mathbf{f}} \rVert^{2} = P$.
+where $\mathbf{C} \triangleq \sum_{i=-Q, i\neq 0}^{Q} \bar{\mathbf{g}}[i]\bar{\mathbf{g}}^{H}[i] + \sigma^{2}/P \mathbf{I}$, assuming the total transmit power is $\lVert \bar{\mathbf{f}} \rVert^{2} = P$. This $\bar{\vb{f}}^{\mathrm{MMSE}}$ represents the optimal, fully-digital beamformer that serves as the target for our practical hybrid design.
+
 \section{The Spatial Wideband Effect}\label{sec:SWE}
+The channel model presented so far, the tap-based model in \eqref{eq:NB_channel}, is based on a critical simplifying assumption: the \textbf{narrowband assumption}. This assumption presumes that the signal's symbol period $T_s$ is much larger than the propagation delay of the signal across the entire antenna array. In this case, a signal from a given path $l$ is treated as arriving at all $M_t$ antennas at the exact same time instant, $\tau_l$.
+
+However, in mmWave and THz systems, this assumption breaks down. The combination of very wide bandwidths (which leads to a very short symbol period $T_s$) and very large antenna arrays (large $M_t$, which means a large physical aperture) creates a new challenge known as the \textbf{spatial wideband effect}, or "beam squint."
+
+This effect is a simple consequence of geometry. For a Uniform Linear Array (ULA), a planar wavefront arriving from an angle of departure $\theta_{li}$ does not hit all antennas simultaneously. It hits one end of the array (e.g., antenna $m=1$) first, and then must travel an additional distance to reach the other antennas.
+
+
+
+The additional distance the signal must travel to reach antenna $m$ (relative to antenna 1) is $(m-1)d \sin(\theta_{li})$. This creates a small, per-antenna time delay, $\Delta\tau_m$, as shown in \eqref{eq:per_antenna_delay}~\cite{9351751}.
+\begin{equation}\label{eq:per_antenna_delay}
+    \Delta\tau_m = (m-1) \frac{d \sin(\theta_{li})}{c}
+\end{equation}
+Therefore, the true physical delay for the $m$-th antenna of the $l$-th path, $\tau_{l,m}$, is not constant with respect to the antenna index. The total delay is given by \eqref{eq:true_antenna_delay}.
+\begin{equation}\label{eq:true_antenna_delay}
+    \tau_{l,m} = \tau_{l,1} + \Delta\tau_m = \tau_{l,1} + (m-1) \frac{d \sin(\theta_{li})}{c}
+\end{equation}
+This per-antenna delay $\tau_{l,m}$ has a severe impact on the system, which is the central problem this thesis investigates:
+
+\begin{enumerate}
+    \item \textbf{In the Frequency Domain (Beam Squint):} A time delay $\Delta\tau_m$ is equivalent to a frequency-dependent phase shift $e^{-j2\pi f \Delta\tau_m}$. In a wideband system, the frequency $f$ varies across the band (e.g., $f \in [f_c - B/2, f_c + B/2]$). This means the phase shift applied to the low-frequency components of the signal is different from the phase shift applied to the high-frequency components. As a result, the beamformer physically "points" in a slightly different direction for different frequencies, an effect known as beam squint.
+    
+    \item \textbf{In the Time Domain (Tap-Based Channel Smearing):} More critically for DAM, this effect changes the fundamental structure of the tap-based channel model. The model in \eqref{eq:NB_channel} is incorrect because it assumes the entire vector $\vb{h}_l$ is multiplied by a single pulse $p(qT_s - \tau_l)$. The true wideband channel model, which we will define in Chapter~\ref{chap:model}, must account for the fact that each element $m$ of the antenna array has its own distinct delay $\tau_{l,m}$.
+\end{enumerate}
+
+This "smearing" of a single path's energy across both time (taps) and space (antennas) is the true wideband channel. Failing to model it correctly---as the conventional `NB-DAM` model does---will result in a flawed beamformer design that fails to align the channel taps, leading to massive residual ISI. This thesis will quantify this performance loss and demonstrate how to correct it using more accurate channel models.
 
 \chapter{System and Channel Model}\label{chap:model}
 \section{System Architecture}\label{sec:system}
+We consider a single-user downlink communication system, as is standard in foundational DAM research \cite{10970425}. The system consists of:
+\begin{itemize}
+    \item A \textbf{Base Station (BS)} (transmitter) equipped with a large-scale Uniform Linear Array (ULA) of $M_t$ antenna elements.
+    \item A \textbf{User Equipment (UE)} (receiver) equipped with a single antenna.
+\end{itemize}
+This configuration is known as a Multiple-Input Single-Output (MISO) system.
+
+The key challenge in practical mmWave and THz systems is the cost and power consumption of the Radio Frequency (RF) components. An ideal, fully-digital (FD) beamformer would require a dedicated RF chain for each of the $M_t$ antennas. This is prohibitively expensive for large $M_t$.
+
+To address this, we adopt a practical \textbf{Hybrid Analog/Digital architecture}.
+% \begin{figure}[htp]
+%     \centering
+%     % You can create this figure or find a similar one.
+%     % Figure 2(a) from your reference paper [10970425] is perfect for this.
+%     \includegraphics[width=0.9\textwidth]{hbf_architecture.png} 
+%     \caption[Hybrid Beamforming Architecture]{The fully-connected hybrid beamforming architecture at the transmitter. $M_{\text{RF}}$ RF chains connect a low-dimensional digital beamformer to a high-dimensional analog phase shifter network. (Adapted from \cite{10970425})}
+%     \label{fig:hbf_arch}
+% \end{figure}
+
+In this architecture, the BS is equipped with only $M_{\text{RF}}$ RF chains, where $M_{\text{RF}} \ll M_t$. The beamforming task is split into two stages:
+
+\begin{enumerate}
+    \item \textbf{Analog Beamformer ($\vb{F}_{\text{RF}}$):} A high-dimensional ($M_t \times M_{\text{RF}}$) matrix implemented by analog phase shifters. This stage performs spatial pre-coding in the analog domain. Its key hardware constraint is that all its elements must have a constant modulus (i.e., they can only change phase, not amplitude).
+    
+    \item \textbf{Digital Beamformer ($\vb{F}_{\text{BB}}$):} A low-dimensional ($M_{\text{RF}} \times L'$) matrix implemented in the digital baseband, where $L'$ is the number of taps to be aligned. This stage performs more complex beamforming.
+\end{enumerate}
+
+The overall effective beamforming vector for the $l$-th tap, $\vb{f}_l$, is the product of these two stages: $\vb{f}_l = \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l}$. This structure leads directly to the transmitted signal model we use throughout this thesis, as previously shown in \eqref{eq:transmitted_signal}.
+
 \section{Channel Model Formulations}\label{sec:channel}
 We introduce three channel models : NB-DAM, WB-DAM, and SA-DAM. NB-DAM is the conventional narrowband model, ignoring the spatial wideband effect. It assumes that a siganl arrives at all $M_t$ antennas at the exact same physical delay $\tau_l$. This model is from the previous paper, and is given by \eqref{eq:NB_channel}. NB-DAM is physically inaccurate for large antenna arrays and wide bandwidths, as the travel time is different for each antenna. \\
 WB-DAM is the "physically perfect" ground truth model, fully capturing the spatial wideband effect. It correctly calculates the unique, distinct delay for every single antenna in the array. The delay for the $m$-th antenna of the $l$-th path is given by \eqref{eq:antenna_delay}\cite{9351751},
@@ -486,6 +583,39 @@ Once again, the \texttt{SA-DAM (Hybrid)} (red, square) and \texttt{WB-DAM (Hybri
 
 Finally, the ideal \texttt{WB-DAM (Digital)} benchmark (black, dashed line) shows a slight increase in rate as bandwidth grows. This is expected, as a wider bandwidth provides higher time resolution, which allows the system to resolve more multi-path components, increasing the channel's frequency diversity. The fully-digital system can exploit this, while the hybrid models are limited by their $M_{\text{RF}}=8$ RF chains.
 
+\section{Result 4: Computational Complexity and Runtime Analysis}\label{sec:runtime}
+While the previous results demonstrate the superior spectral efficiency of the \texttt{SA-DAM} and \texttt{WB-DAM} models, the computational cost of beamforming optimization is also a critical metric for system realizability. A common concern is that physically accurate wideband models might incur a prohibitive computational cost compared to the simpler narrowband approximation.
+
+To investigate this, we conducted a "stress test" simulation with increased channel density. We increased the number of multi-paths to $L=20$ (compared to the default $L=4$) and the number of RF chains to $M_{\text{RF}}=40$, decreased the tap selection threshold to $C=0.001$. This setup increases the diversity of the channel, allowing us to more effectively evaluate runtime differences.
+
+The average optimization runtime per channel realization for each model is presented in Table~\ref{tab:runtime_results}.
+
+\begin{table}[htp]
+    \centering
+    \caption{Average Optimization Runtime ($L=20$, $M_{\text{RF}}=40$)}
+    \label{tab:runtime_results}
+    \begin{tabular}{@{}lccc@{}}
+        \toprule
+        \textbf{Model} & \textbf{Avg. Hybrid SINR} & \textbf{Avg. Ideal SINR} & \textbf{Avg. Runtime} \\
+        & \textbf{(\si{\deci\bel})} & \textbf{(\si{\deci\bel})} & \textbf{(\si{\second})} \\
+        \midrule
+        \texttt{NB-DAM} & 24.56 & 24.57 & 2.15 \\
+        \texttt{SA-DAM} & 33.22 & 35.31 & 2.02 \\
+        \texttt{WB-DAM} & 33.58 & 35.39 & 2.01 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The results indicate that there is no significant runtime penalty for using the more accurate \texttt{SA-DAM} or \texttt{WB-DAM} models. In fact, the runtimes are remarkably similar, with the \texttt{WB-DAM} model actually performing slightly faster on average in this specific case.
+
+This similarity can be explained by analyzing the computational bottleneck of the beamforming design. As detailed in Chapter~\ref{chap:design}, the core of the optimization involves calculating the MMSE beamformer $\bar{\vb{f}}^{\mathrm{MMSE}}$, which requires the inversion of the interference-plus-noise covariance matrix $\mathbf{C}$ defined in \eqref{eq:C_matrix}.
+
+The dimension of matrix $\mathbf{C}$ is $(M_t L' \times M_t L')$, where $M_t$ is the number of antennas and $L'$ is the number of \textit{selected} effective taps (clusters) to be aligned. The computational complexity of identifying these taps (clustering) is negligible compared to the $O((M_t L')^3)$ complexity of inverting $\mathbf{C}$. Therefore, the runtime is primarily dominated by the value of $L'$.
+
+In our simulations, despite the differences in physical accuracy, all three models tended to identify and select a similar number of dominant taps ($L'$) from the channel. Because $L'$ remains similar across the three models, the size of the matrix $\mathbf{C}$ remains similar, leading to nearly equivalent computational loads.
+
+This is a significant finding for practical implementation. It demonstrates that the performance gains of \texttt{SA-DAM} and \texttt{WB-DAM} (an approximate \SI{9}{\deci\bel} SINR gain in this scenario) can be achieved without incurring additional computational delay, making them highly attractive for real-time wideband systems.
+
 \chapter{Conclusion}\label{chap:conclusion}
 This thesis has conducted a comprehensive investigation into the practical design of hybrid analog/digital beamformers for Delay Alignment Modulation (DAM) systems, focusing on the critical, but often-overlooked, spatial wideband effect. As mmWave and THz systems move towards larger antenna arrays ($M_t$) and wider bandwidths ($B$), this effect, also known as "beam squint," introduces per-antenna time delays that can severely degrade system performance if not properly modeled.
 
@@ -499,7 +629,7 @@ To answer this, we implemented and compared three distinct channel models within
 \end{enumerate}
 Our methodology was to design a practical hybrid beamformer using each of these three models (via OMP) and then, critically, evaluate all three on the "ground truth" \texttt{WB-DAM} channel to measure their real-world performance.
 
-\section*{Summary of Findings and Contributions}
+\section{Summary of Findings and Contributions}
 The simulation results from Chapter~\ref{chap:results} led to several clear and significant conclusions. The primary contributions of this thesis are:
 
 \begin{itemize}
@@ -514,7 +644,7 @@ The simulation results from Chapter~\ref{chap:results} led to several clear and 
 
 In summary, this thesis has shown that while the spatial wideband effect is a system-breaking challenge, it is one that can be successfully overcome. The traditional narrowband assumption is obsolete for these systems, but a \texttt{SA-DAM} approximation provides a robust and practical solution.
 
-\section*{Limitations and Future Work}
+\section{Limitations and Future Work}
 This research opens several avenues for future investigation:
 \begin{itemize}
     \item \textbf{Optimal Sub-Array Partitioning:} Our \texttt{SA-DAM} model used a fixed number of sub-arrays ($K=8$). A future study could investigate the optimal $K$, analyzing the trade-off between model complexity (increasing $K$) and achievable rate.
@@ -527,5 +657,8 @@ This research opens several avenues for future investigation:
 \printbibliography
 
 \begin{abstract}[ko]
+    지연 정렬 변조(Delay Alignment Modulation, DAM)는 채널의 다중 경로 희소성(sparsity)을 활용하여 밀리미터파(mmWave) 및 테라헤르츠(THz) 통신에서 심볼 간 간섭(Inter-Symbol Interference, ISI)을 완화하는 유망한 기술이다. 기존 연구들은 DAM의 이론적 이점을 입증했으나, 실제 시스템 구현을 위해서는 하이브리드 아날로그/디지털 빔포밍의 하드웨어적 제약과 빔 스퀸트(beam squint)로 알려진 공간 광대역 효과(spatial wideband effect)라는 두 가지 주요 과제를 해결해야 한다. 특히 대규모 안테나 배열과 광대역을 사용하는 시스템에서는 공간 광대역 효과로 인해 안테나 소자마다 서로 다른 전파 지연이 발생하게 되며, 이는 기존의 협대역(narrowband) 가정이 더 이상 유효하지 않음을 의미한다.
+
+    본 논문에서는 채널 모델의 정확도가 DAM 시스템을 위한 실용적 하이브리드 빔포머 설계에 미치는 영향을 분석한다. 이를 위해 안테나별 지연을 무시하는 기존의 협대역 모델(NB-DAM), 이를 완벽하게 반영하는 광대역 모델(WB-DAM), 그리고 이를 근사화한 서브 어레이 모델(SA-DAM)의 세 가지 모델을 정립하고 비교하였다. 각 모델을 기반으로 직교 매칭 (Orthogonal Matching Pursuit, OMP) 알고리즘을 통해 하이브리드 빔포머를 설계하고, 전송률(achievable rate) 성능을 평가하였다. 시뮬레이션 결과, 기존 협대역 모델은 안테나 수나 대역폭이 증가함에 따라 실제 광대역 ISI를 제거하지 못하여 성능이 급격히 저하됨을 확인하였다. 반면, 제안된 서브 어레이 근사 모델(SA-DAM)은 전체 광대역 모델(WB-DAM)과 대등한 성능을 보이면서도 연산 효율성이 뛰어나, 실제 대규모 밀리미터파 시스템을 위한 효과적인 솔루션임을 입증하였다.
 \end{abstract}
 \end{document}
