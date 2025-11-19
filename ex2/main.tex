@@ -17,14 +17,15 @@
 
 \addbibresource{bib.bib}
 
-\title{SNU ECE BSc Thesis}
+\title{ISI Pre-equalization Techniques for Ultra-Wideband mmWave MIMO Communications\\ (초고주파 초광대역 MIMO 통신을 위한    
+ISI pre-equalization 기법)}
 \author{김주호}
 \advisor{최완}
 \date{2025년 12월}
 \approvaldate{2025년 12월 15일}
 
-\koreankeywords{지연 정렬 변조, 하이브리드 빔포밍, 공간 광대역 효과, 빔 스퀸트, 심볼 간 간섭, 밀리미터파 통신, 서브 어레이 구조}
-\englishkeywords{Delay Alignment Modulation (DAM), Hybrid Beamforming, Spatial Wideband Effect, Beam Squint, Inter-Symbol Interference (ISI), mmWave Communications, Sub-array Architecture}
+\koreankeywords{지연 정렬 변조, 하이브리드 빔포밍, 공간 광대역 효과, 심볼 간 간섭, 밀리미터파 통신, 서브 어레이 구조}
+\englishkeywords{Delay Alignment Modulation (DAM), Hybrid Beamforming, Spatial Wideband Effect, Inter-Symbol Interference (ISI), mmWave Communications, Sub-array Architecture}
 
 
 \begin{document}
@@ -95,15 +96,22 @@ To accurately represent this, we use a multi-path channel model. The channel is 
 Here, $v_{li}$ is the complex coefficient of the $i$-th sub-path within the $l$-th path, and $\vb{a}_t(\theta_{li})$ is the transmit array response vector corresponding to the AoD $\theta_{li}$. For a Uniform Linear Array (ULA) with $M_t$ antennas, the array response vector is defined in \eqref{eq:steering_vector}. $d$ is the antenna spacing and $\lambda$ is the wavelength. The array response vector captures the phase shifts across the antenna array due to the angle of departure,
 resulting in a channel vector $\vb{h}_l$ for that path.\\
 \begin{equation}\label{eq:steering_vector}
-    \vb{a}_t(\theta_{li}) = \left[1, e^{-j2\pi \frac{d}{\lambda} \sin(\theta_{li})}, \cdots, e^{-j2\pi (M_t-1) \frac{d}{\lambda} \sin(\theta_{li})}\right]^T
+    \vb{a}_t(\theta_{li}) =
+    \begin{bmatrix}
+        1 \\
+        e^{-j2\pi \frac{d}{\lambda} \sin(\theta_{li})} \\
+        \vdots \\
+        e^{-j2\pi (M_t-1) \frac{d}{\lambda} \sin(\theta_{li})}
+    \end{bmatrix}
 \end{equation}
+
 When a signal $\vb{x}[n]$ is transmitted using a pulse-shaping filter $p(t)$, the continuous-time channel is sampled at the receiver. This results in a discrete, tap-based channel model, $\vb{h}_{\text{DL}}^H[q]$, where $q$ is the tap index. The tap-based channel model is highly general, as it naturally accounts for fractional path delays (where $\tau_l$ is not an integer multiple of the symbol duration $T_s$). As shown in \eqref{eq:NB_channel}\cite{10970425}, the $q$-th tap of the channel is the superposition of contributions from all $L$ paths. 
 \begin{equation}\label{eq:NB_channel}
     \vb{h}_{\text{DL}}^H[q] = \sum_{l=1}^L \vb{h}_l^H p(qT_s-\tau_l), q=0,\cdots, Q
 \end{equation}
 The total received signal $y[n]$ is the convolution of the transmitted signal $\vb{x}[n]$ with the channel taps $\vb{h}_{\text{DL}}^H[q]$, plus additive noise $\vb{z}[n]$, as shown in \eqref{eq:received_signal}\cite{10970425}.
 \begin{equation}\label{eq:received_signal}
-    y[n] = \sum_{q=0}^Q \vb{h}_{\text{DL}}^H[q] \vb{x}[n-q] + \vb{z}[n]
+    y[n] = \sum_{q=0}^Q \vb{h}_{\text{DL}}^H[q] \vb{x}[n-q] + z[n]
 \end{equation}
 \section{Delay Alignment Modulation (DAM) with Hybrid Beamforming}\label{sec:dam}
 The core principle of Delay Alignment Modulation (DAM) is to mitigate the ISI caused by multi-path propagation (as seen in \eqref{eq:received_signal}) by using two techniques at the transmitter: \textbf{delay pre-compensation} and \textbf{path-based beamforming} \cite{10970425}.
@@ -244,7 +252,7 @@ In this architecture, the BS is equipped with only $M_{\text{RF}}$ RF chains, wh
 The overall effective beamforming vector for the $l$-th tap, $\vb{f}_l$, is the product of these two stages: $\vb{f}_l = \vb{F}_{\text{RF}} \vb{f}_{\text{BB},l}$. This structure leads directly to the transmitted signal model we use throughout this thesis, as previously shown in \eqref{eq:transmitted_signal}.
 
 \section{Channel Model Formulations}\label{sec:channel}
-We introduce three channel models : NB-DAM, WB-DAM, and SA-DAM. NB-DAM is the conventional narrowband model, ignoring the spatial wideband effect. It assumes that a siganl arrives at all $M_t$ antennas at the exact same physical delay $\tau_l$. This model is from the previous paper, and is given by \eqref{eq:NB_channel}. NB-DAM is physically inaccurate for large antenna arrays and wide bandwidths, as the travel time is different for each antenna. \\
+We introduce three channel models: NB-DAM, WB-DAM, and SA-DAM. NB-DAM is the conventional narrowband model, ignoring the spatial wideband effect. It assumes that a signal arrives at all $M_t$ antennas at the exact same physical delay $\tau_l$. This model corresponds to the standard formulation in \eqref{eq:NB_channel}. NB-DAM is physically inaccurate for large antenna arrays and wide bandwidths, as the travel time is different for each antenna. \\
 WB-DAM is the "physically perfect" ground truth model, fully capturing the spatial wideband effect. It correctly calculates the unique, distinct delay for every single antenna in the array. The delay for the $m$-th antenna of the $l$-th path is given by \eqref{eq:antenna_delay}\cite{9351751},
 
 \begin{equation}\label{eq:antenna_delay}
@@ -292,8 +300,7 @@ The SA-DAM model is an approximation of the WB-DAM model, quantizing the spatial
 \section{Problem Formulation}\label{sec:problem}
 The background research in Section~\ref{sec:dam} presents the optimal fully-digital beamformer, $\bar{\vb{f}}^{\mathrm{MMSE}}$ (from \eqref{eq:f_mmse_bar}), which maximizes the SINR in a tap-based DAM system. This solution, however, is purely theoretical as it assumes a dedicated Radio Frequency (RF) chain for each of the $M_t$ antenna elements. In practical mmWave and THz systems, this fully-digital architecture is prohibitively expensive and power-intensive.
 
-To address this, we employ a practical hybrid analog/digital architecture, as shown in \eqref{eq:transmitted_signal}. In this structure, the $M_t \times 1$ ideal beamformer $\vb{f}_l$ for each tap $l$ is approximated by the product of a high-dimensional analog beamforming matrix $\vb{F}_{\text{RF}} \in \mathbb{C}^{M_t \times M_{\text{RF}}}$ and a low-dimensional digital beamforming vector $\vb{f}_{\text{BB},l} \in \mathbb{C}^{M_{\text{RF}} \times 1}$, where the number of RF chains $M_{\text{RF}} \ll M_t$.
-
+To address this, we employ a practical hybrid analog/digital architecture, as previously defined in \eqref{eq:transmitted_signal}. In this structure, the $M_t \times 1$ ideal beamformer $\vb{f}_l$ for each tap $l$ is approximated by the product of a high-dimensional analog beamforming matrix $\vb{F}_{\text{RF}} \in \mathbb{C}^{M_t \times M_{\text{RF}}}$ and a low-dimensional digital beamforming vector $\vb{f}_{\text{BB},l} \in \mathbb{C}^{M_{\text{RF}} \times 1}$, where the number of RF chains $M_{\text{RF}} \ll M_t$.
 Let $\vb{F}_{\text{opt}} = [\vb{f}_1, \dots, \vb{f}_{L'}] \in \mathbb{C}^{M_t \times L'}$ be the ideal, fully-digital beamforming matrix (composed of the MMSE vectors). The first challenge is to find the hybrid matrices $(\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}})$ that best approximate $\vb{F}_{\text{opt}}$. This is a matrix factorization problem:
 \begin{equation}\label{eq:matrix_factorization}
     \min_{\vb{F}_{\text{RF}}, \vb{F}_{\text{BB}}} \left\| \vb{F}_{\text{opt}} - \vb{F}_{\text{RF}} \vb{F}_{\text{BB}} \right\|_F^2
@@ -343,18 +350,13 @@ As formulated in Section~\ref{sec:problem}, our core task is to design a practic
 First, we define the ideal target $\vb{F}_{\text{opt}}$ by solving the fully-digital MMSE problem. Second, we describe the Orthogonal Matching Pursuit (OMP) algorithm, which is the sparse approximation technique used to solve the matrix factorization problem in \eqref{eq:matrix_factorization}. Finally, we detail the construction of the channel-aware beamforming dictionary, which is a critical component for the OMP algorithm's success.
 
 \section{Stage 1: Ideal Fully-Digital MMSE Beamformer}
-The first stage is to compute the theoretical "target" beamformer, $\vb{F}_{\text{opt}}$, which we aim to approximate. This target is the optimal fully-digital beamformer that maximizes the SINR. As shown in Section~\ref{sec:dam}, the SINR is maximized by the MMSE solution.
+The first stage is to compute the theoretical "target" beamformer, $\vb{F}_{\text{opt}}$, which we aim to approximate. This target is the optimal fully-digital beamformer that maximizes the SINR. As derived in Section~\ref{sec:dam}, the SINR is maximized by the MMSE solution given in \eqref{eq:f_mmse_bar}:
 
-This solution is given by \eqref{eq:f_mmse_bar}, which we restate here from Chapter 2:
-\begin{equation}
+\begin{equation*}
     \bar{\vb{f}}^{\mathrm{MMSE}}=\sqrt{P}\frac{\mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}}}{ \left\lVert \mathbf{C}^{-1}\bar{\mathbf{h}}_{\text{DL}} \right\rVert}
-\end{equation}
-where $\mathbf{C}$ is the interference-plus-noise covariance matrix, defined as:
-\begin{equation}\label{eq:C_matrix}
-    \mathbf{C} \triangleq \sum_{i=-Q, i\neq 0}^{Q} \bar{\mathbf{g}}[i]\bar{\mathbf{g}}^{H}[i] + \frac{\sigma^{2}}{P} \mathbf{I}_{M_t L'}
-\end{equation}
-The resulting $\bar{\vb{f}}^{\mathrm{MMSE}}$ is a stacked vector of size $(M_t L' \times 1)$. To create our target matrix $\vb{F}_{\text{opt}}$, we simply reshape this vector into an $(M_t \times L')$ matrix, where each $l$-th column corresponds to the ideal beamforming vector for the $l$-th selected tap.
+\end{equation*}
 
+The resulting $\bar{\vb{f}}^{\mathrm{MMSE}}$ is a stacked vector of size $(M_t L' \times 1)$. To create our target matrix $\vb{F}_{\text{opt}}$, we simply reshape this vector into an $(M_t \times L')$ matrix, where each $l$-th column corresponds to the ideal beamforming vector for the $l$-th selected tap.
 To address the problem defined in Section~\ref{sec:problem}, this entire calculation is performed independently for each of the three channel models. This yields three distinct ideal beamforming matrices, which form the targets for our hybrid approximation:
 \begin{itemize}
     \item $\vb{F}_{\text{opt}}^{\text{NB}} = \text{Reshape}(\text{MMSE}(\vb{h}_{\text{NB-DAM}}))$
