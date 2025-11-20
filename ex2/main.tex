@@ -17,7 +17,7 @@
 
 \addbibresource{bib.bib}
 
-\title{ISI Pre-equalization Techniques for Ultra-Wideband mmWave MIMO Communications\\ (초고주파 초광대역 MIMO 통신을 위한    
+\title{ISI Pre-equalization Technique for Ultra-Wideband mmWave MIMO Communications\\ (초고주파 초광대역 MIMO 통신을 위한    
 ISI pre-equalization 기법)}
 \author{김주호}
 \advisor{최완}
@@ -33,7 +33,7 @@ ISI pre-equalization 기법)}
 
 \pagenumbering{roman}
 \begin{abstract}
-    Delay Alignment Modulation (DAM) is a promising technique for mitigating Inter-Symbol Interference (ISI) in millimeter-wave (mmWave) and Terahertz (THz) communications by leveraging the channel's multi-path sparsity. While previous research has established the theoretical benefits of DAM, practical implementation faces two significant challenges: the hardware constraints of hybrid analog/digital beamforming and the physical reality of the spatial wideband effect, also known as beam squint. In large-scale antenna arrays with wide bandwidths, the spatial wideband effect introduces frequency-dependent phase shifts that manifest as distinct propagation delays for each antenna element, violating the standard narrowband assumption.
+    Delay Alignment Modulation (DAM) is a promising technique for pre-equalizing Inter-Symbol Interference (ISI) in millimeter-wave (mmWave) and Terahertz (THz) communications by leveraging the channel's multi-path sparsity. While previous research has established the theoretical benefits of DAM, practical implementation faces two significant challenges: the hardware constraints of hybrid analog/digital beamforming and the physical reality of the spatial wideband effect, also known as beam squint. In large-scale antenna arrays with wide bandwidths, the spatial wideband effect introduces frequency-dependent phase shifts that manifest as distinct propagation delays for each antenna element, violating the standard narrowband assumption.
 
     This thesis investigates the impact of channel model accuracy on the design of practical hybrid beamformers for DAM systems. We formulate and compare three distinct channel models: the conventional narrowband model (NB-DAM), which ignores per-antenna delays; the ground-truth wideband model (WB-DAM), which fully accounts for them; and a proposed sub-array approximation (SA-DAM). Using the Orthogonal Matching Pursuit (OMP) algorithm, we design hybrid beamformers based on each model and evaluate their performance in terms of achievable rate. Our simulation results demonstrate that the conventional narrowband model fails catastrophically as the number of antennas or system bandwidth increases, as it designs a beamformer that cannot cancel the true wideband ISI. Conversely, the proposed sub-array approximation (SA-DAM) is shown to be highly effective, achieving near-optimal performance comparable to the full wideband model while offering a computationally efficient solution for practical large-scale mmWave systems.
 \end{abstract}
@@ -53,7 +53,7 @@ In wideband transmission, the symbol duration ($T_s$) becomes extremely short. W
 
 Orthogonal Frequency Division Multiplexing (OFDM) is currently the dominant technique for handling ISI. By converting a frequency-selective wideband channel into multiple flat-fading narrowband subcarriers, OFDM effectively mitigates ISI. However, OFDM suffers from well-known drawbacks, including a high Peak-to-Average Power Ratio (PAPR) and sensitivity to carrier frequency offsets, which are particularly problematic for power-constrained mmWave/THz systems \cite{10970425}.
 
-Recently, \textbf{Delay Alignment Modulation (DAM)} has emerged as a promising alternative. By leveraging the spatial sparsity of mmWave channels and the high spatial resolution of large antenna arrays, DAM proactively aligns multi-path components at the receiver side, effectively eliminating ISI without the drawbacks of OFDM.
+Recently, \textbf{Delay Alignment Modulation} has emerged as a promising ISI pre-equalization technique. We will denote this ISI pre-equalization technique as DAM, following the established trend in recent research. By leveraging the spatial sparsity of mmWave channels and the high spatial resolution of large antenna arrays, DAM proactively aligns multi-path components at the receiver side, effectively eliminating ISI without the drawbacks of OFDM.
 
 \section{Problem Statement}
 While the theoretical potential of DAM is well-established, its practical implementation faces a critical physical constraint that is often overlooked in existing literature: the \textbf{spatial wideband effect}, also known as "beam squint."
@@ -114,7 +114,7 @@ The total received signal $y[n]$ is the convolution of the transmitted signal $\
     y[n] = \sum_{q=0}^Q \vb{h}_{\text{DL}}^H[q] \vb{x}[n-q] + z[n]
 \end{equation}
 \section{Delay Alignment Modulation (DAM) with Hybrid Beamforming}\label{sec:dam}
-The core principle of Delay Alignment Modulation (DAM) is to mitigate the ISI caused by multi-path propagation (as seen in \eqref{eq:received_signal}) by using two techniques at the transmitter: \textbf{delay pre-compensation} and \textbf{path-based beamforming} \cite{10970425}.
+The core principle of Delay Alignment Modulation (DAM) is to achieve ISI pre-equalization by mitigating the multi-path propagation effects (as seen in \eqref{eq:received_signal}) by using two techniques at the transmitter: \textbf{delay pre-compensation} and \textbf{path-based beamforming} \cite{10970425}.
 In a practical system with a hybrid architecture, the transmitted signal $\vb{x}[n]$ is formed as a superposition of $L'$ delayed and beamformed symbols. $L'$ is the number of dominant, resolvable paths (or clusters) that we choose to align. The signal is shown in \eqref{eq:transmitted_signal}.
 \begin{equation}\label{eq:transmitted_signal}
     \vb{x}[n]=\vb{F}_{\text{RF}}\sum_{l=1}^{L'} \vb{f}_{\text{BB},l}s[n-\kappa_l]
@@ -220,7 +220,7 @@ This "smearing" of a single path's energy across both time (taps) and space (ant
 
 \chapter{System and Channel Model}\label{chap:model}
 \section{System Architecture}\label{sec:system}
-We consider a single-user downlink communication system, as is standard in foundational DAM research \cite{10970425}. The system consists of:
+We consider a single-user downlink communication system, following the standard in foundational DAM research \cite{10970425}. The system consists of:
 \begin{itemize}
     \item A \textbf{Base Station (BS)} (transmitter) equipped with a large-scale Uniform Linear Array (ULA) of $M_t$ antenna elements.
     \item A \textbf{User Equipment (UE)} (receiver) equipped with a single antenna.
